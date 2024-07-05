@@ -50,6 +50,21 @@ class Main:
                 if event.type == pygame.QUIT:
                     support.quit()
                 self.scenes[self.scene].event(event)
+                
+            keys = pygame.key.get_pressed()
+            mousedir = pygame.Vector2()
+            if keys[pygame.K_i]:
+                mousedir.y -= 1
+            if keys[pygame.K_j]:
+                mousedir.x -= 1
+            if keys[pygame.K_l]:
+                mousedir.x += 1
+            if keys[pygame.K_k]:
+                mousedir.y += 1
+            if mousedir.magnitude() != 0:
+                mousedir.normalize_ip()
+                mousedir *= MOUSE_SPEED*data.dt
+                pygame.mouse.set_pos(pygame.mouse.get_pos()+mousedir)
 
             data.screen.fill(0)
             self.scenes[self.scene].update()

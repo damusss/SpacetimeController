@@ -115,7 +115,6 @@ class UI:
                 data.app.enter_menu()
 
     def draw_finish(self):
-        self.draw_resources_amount()
         self.finish_alpha += data.dt * UI_FINISH_SPEED
         self.overlay_alpha += data.dt * UI_FINISH_SPEED * 2
         if self.finish_alpha >= 255:
@@ -134,6 +133,7 @@ class UI:
         else:
             self.overlay.set_alpha(self.overlay_alpha)
         data.screen.blit(self.overlay, (0, 0))
+        self.draw_resources_amount()
         if data.game.finish_reason == "gameover":
             self.draw_gameover()
         else:
