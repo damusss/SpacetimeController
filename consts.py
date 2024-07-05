@@ -5,9 +5,10 @@ pygame.init()
 
 WIDTH, HEIGHT = pygame.display.get_desktop_sizes()[0]
 CENTER = pygame.Vector2(WIDTH // 2, HEIGHT // 2)
+WINDOW_RECT = pygame.Rect(0, 0, WIDTH, HEIGHT)
 FPS = 0
 TITLE = "Spacetime Controller"
-WEB = False 
+WEB = False
 if sys.platform in ("emscripten", "wasi"):
     WEB = True
 
@@ -16,19 +17,32 @@ UNIVERSE_SIZE = CHUNK_SIZE * 20
 UNIVERSE_INFLATED = UNIVERSE_SIZE + CHUNK_SIZE * 2
 UNIVERSE_RECT = pygame.Rect(0, 0, UNIVERSE_SIZE, UNIVERSE_SIZE).move_to(center=(0, 0))
 STARS_IN_CHUNK = 50
-if WEB:
-    STARS_IN_CHUNK = 30
 DUSTS_IN_FAR_CHUNK = 8
 if WEB:
-    DUSTS_IN_FAR_CHUNK = 3
+    DUSTS_IN_FAR_CHUNK = 2
+    STARS_IN_CHUNK = 20
 DUST_FAR_CHUNK_SIZE_RANGE = (int(CHUNK_SIZE // 1.2), int(CHUNK_SIZE // 1))
 DUST_CHANCE = 50
 DUST_SIZE_RANGE = DUST_FAR_CHUNK_SIZE_RANGE
 STAR_SIZE_RANGE = (2, 6)
 
-ASTEROID_HIT_SPEED = 400
+MENU_STARS = 200
+MENU_DUSTS = 4
+MENU_DUST_SIZE_RANGE = (WIDTH / 3, WIDTH / 2)
+MENU_PLAY_SPEED = 100
+BTN_COLOR = (200, 120, 0)
+BTN_HOVER = (255, 200, 0)
+MENU_BTN_SIZE = NotImplemented
+
+BUTTON_SEGMENT = 16
+BUTTON_R = 16
+BUTTON_W = 5
+BUTTON_WS = 3
+BUTTON_SPEED = 50
+
+ASTEROID_HIT_SPEED = 380
 ASTEROID_AMOUNT = 500
-ASTEROID_HIT_COOLDOWN = 1000
+ASTEROID_HIT_COOLDOWN = 500
 ASTEROID_POINTS_RANGE = (8, 12)
 ASTEROID_SIZE_RANGE = (50, 120)
 ASTEROID_SPEED_RANGE = (5, 20)
@@ -38,23 +52,24 @@ ASTEROID_COL2 = pygame.Color(188, 143, 143)
 RESOURCE_AMOUNT_RANGE = (2, 4)
 RESOURCE_POINTS_RANGE = (5, 7)
 RESOURCE_COOLDOWN = 20000
-RESOURCE_ROT_SPEED_RANGE = (40, 60)
+RESOURCE_ROT_SPEED_RANGE = (80, 120)
 RESOURCE_COLLECT_SPEED = 15
 RESOURCES = {
-    "coal": ((30, 30, 30),),
-    "iron": ((110, 110, 110),),
-    "copper": ((200, 120, 0),),
-    "gold": ((200, 180, 0),),
-    "ametist": ((50, 0, 200),),
-    "emerald": ((0, 200, 40),),
+    "coal": ((30, 30, 30), 1),
+    "iron": ((110, 110, 110), 1),
+    "copper": ((200, 120, 0), 2),
+    "gold": ((200, 180, 0), 2),
+    "ametist": ((50, 0, 200), 3),
+    "emerald": ((0, 200, 40), 3),
 }
 RESOURCE_COLID = 0
+RESOURCE_HEALID = 1
 
 FRAGMENT_SIZE_RANGE = (8, 15)
 FRAGMENT_SPEED_RANGE = (30, 60)
 FRAGMENT_COOLDOWN = 5000
 
-BLACKHOLE_AMOUNT = 10
+BLACKHOLE_AMOUNT = 14
 BLACKHOLE_SIZE_RANGE = (300, 500)
 BLACKHOLE_MULT = 1.6
 
@@ -71,20 +86,67 @@ PLAYER_SIZE = (60, 40)
 PLAYER_MAX_RESOURCES = 20
 PLAYER_COL = "red"
 PLAYER_HEALTH = 60
+PLAYER_TRAIL_SPEED = 25
+PLAYER_TRAIL_COL = (0, 100, 255)
+PLAYER_TRAIL_COOLDOWN = 40
 
 ENEMIES = {
-    "green": ["green", 5, (5, 10), 240, (50, 30)],
-    "pink": ["magenta", 8, (4, 8), 260, (60, 40)],
-    "yellow": ["yellow", 15, (3, 6), 290, (110, 30)],
-    "blue": ["blue", 20, (2, 4), 300, (90, 50)],
+    "green": ["green", 5, (10, 15), 240, (50, 30)],
+    "pink": ["magenta", 8, (8, 12), 260, (60, 40)],
+    "yellow": ["yellow", 12, (6, 10), 290, (110, 30)],
+    "blue": ["blue", 15, (4, 8), 300, (90, 50)],
 }
 ENEMY_COLID = 0
 ENEMY_DAMAGEID = 1
 ENEMY_PACKSIZEID = 2
 ENEMY_SPEEDID = 3
 ENEMY_SIZEID = 4
-ENEMY_PACK_COOLDOWN_RANGE = (25000, 50000)
+ENEMY_PACK_COOLDOWN_RANGE = (50000, 110000)
 ENEMY_ROT_SPEED = 3
+
+WEAPONS = {
+    "purple_hole": [CHUNK_SIZE / 1.2, CHUNK_SIZE / 2, 6000, 10, "ametist"],
+    "white_hole": [CHUNK_SIZE, CHUNK_SIZE / 3, 5000, 8, "iron"],
+    "supernova": [CHUNK_SIZE / 2.7, CHUNK_SIZE / 4, 1000, 7, "gold"],
+    "worm_hole": [CHUNK_SIZE * 8, CHUNK_SIZE / 4, 1500, 9, "emerald"],
+}
+WEAPON_RADID = 0
+WEAPON_SIZEID = 1
+WEAPON_DURATIONID = 2
+WEAPON_PRICEID = 3
+WEAPON_RESOURCEID = 4
+
+PURPLEHOLE_SUCK_SPEED = 1000
+WORMHOLE_ACC = 900
+
+WHITEHOLE_SHOOT_COOLDOWN = 80
+WHITEHOLE_PARTICLE_SPEED = 400
+WHITEHOLE_PARTICLE_SIZE = 150
+
+SUPERNOVA_START = pygame.Color(255, 200, 0)
+SUPRNOVA_END = pygame.Color(100, 0, 0)
+SUPERNOVA_EXPLOSION_TIME = 500
+SUPERNOVA_COLORS = [
+    (255, 255, 0),
+    (255, 200, 0),
+    (255, 100, 0),
+    (255, 0, 0),
+    (255, 0, 30),
+    (255, 0, 100),
+    (255, 0, 180),
+    (255, 0, 200),
+    (200, 0, 255),
+    (150, 0, 255),
+    (80, 0, 255),
+    (0, 0, 255),
+    (0, 50, 255),
+    (0, 120, 255),
+    (0, 200, 255),
+    (50, 220, 200),
+    (50, 255, 100),
+    (50, 255, 50),
+]
+SUPERNOVA_LAST = SUPERNOVA_COLORS[-1]
 
 EXPLOSION_SIZE = 120
 EXPLOSION_TIME = 300
@@ -113,8 +175,15 @@ UI_MAP_SIZE = 160
 UI_MAX_RESOURCES = 200
 UI_HEALTH_SIZE = (300, 17)
 UI_HEALTH_BG = (90, 0, 20)
-UI_HEALTH_FILL = (200, 0, 60)
-UI_HEALTH_OUTLINE = (80, 20, 40)
+UI_HEALTH_FILL = (180, 0, 50)
+UI_HEALTH_OUTLINE = (220, 50, 80)
+UI_WEAPON_SIZE = 70
+UI_OK_COL = (0, 220, 50)
+UI_BAD_COL = (220, 0, 50)
+UI_FINISH_SPEED = 70
+UI_BTN_COLOR = NotImplemented
+UI_BTN_SIZE = NotImplemented
+UI_OVERLAY_ALPHA = 200
 
-MAX_DIFFICULTY = 4
 DIFFICULTIES = {"easy": 0, "normal": 1, "hard": 2, "extreme": 3}
+DIFFICULTY_RESOURCES = {"easy": 300, "normal": 500, "hard": 700, "extreme": 1000}

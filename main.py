@@ -6,6 +6,9 @@
 # ///
 # pygbag .
 
+# TODO: sounds
+# TODO: volume settings
+
 import pygame
 from consts import *
 import data
@@ -25,7 +28,7 @@ class Main:
         self.clock = pygame.Clock()
 
         data.images = assets.ImageMaker()
-        self.scene = 1
+        self.scene = 0
         data.main_menu = main_menu.MainMenu()
         data.game = game.Game()
 
@@ -36,9 +39,9 @@ class Main:
         self.scene = 0
         self.scenes[self.scene].enter()
 
-    def enter_game(self):
+    def enter_game(self, difficulty="normal"):
         self.scene = 1
-        self.scenes[self.scene].enter()
+        self.scenes[self.scene].enter(difficulty)
 
     async def run(self):
         while True:
@@ -55,7 +58,7 @@ class Main:
             data.fps = self.clock.get_fps()
             pygame.display.set_caption(TITLE + f" {int(data.fps)}")
             data.dt = self.clock.tick(FPS) / 1000
-            
+
             await asyncio.sleep(0)
 
 

@@ -28,10 +28,7 @@ class Chunk:
         self.dusts = CameraRenderGroup()
 
         for _ in range(STARS_IN_CHUNK):
-            pos = pygame.Vector2(
-                random.randint(self.rect.left, self.rect.right),
-                random.randint(self.rect.top, self.rect.bottom),
-            )
+            pos = pygame.Vector2(support.randpos(self.rect))
             size = random.randint(*STAR_SIZE_RANGE)
             color = support.randcol(200)
             Sprite(pos, data.images.get_star(size, color), self.stars)
@@ -40,10 +37,7 @@ class Chunk:
         if clipped.w <= CHUNK_SIZE // 100 or clipped.h <= CHUNK_SIZE // 100:
             for _ in range(DUSTS_IN_FAR_CHUNK):
                 size = random.randint(*DUST_FAR_CHUNK_SIZE_RANGE)
-                pos = pygame.Vector2(
-                    random.randint(self.rect.left - size, self.rect.right),
-                    random.randint(self.rect.top - size, self.rect.bottom),
-                )
+                pos = pygame.Vector2(support.randpos(self.rect))
                 if random.randint(0, 100) < 50:
                     color = DUST1_START.lerp(DUST1_END, random.uniform(0.0, 1.0))
                 else:
@@ -51,12 +45,9 @@ class Chunk:
                 color.a = 80
                 Sprite(pos, data.images.get_dust(size, (*color,)), self.dusts)
         else:
-            if random.randint(0, 100) < (DUST_CHANCE if not WEB else DUST_CHANCE/3):
+            if random.randint(0, 100) < (DUST_CHANCE if not WEB else DUST_CHANCE / 4):
                 size = random.randint(*DUST_SIZE_RANGE)
-                pos = pygame.Vector2(
-                    random.randint(self.rect.left - size, self.rect.right),
-                    random.randint(self.rect.top - size, self.rect.bottom),
-                )
+                pos = pygame.Vector2(support.randpos(self.rect))
                 if random.randint(0, 100) < 50:
                     color = DUST1_START.lerp(DUST1_END, random.uniform(0.0, 1.0))
                 else:

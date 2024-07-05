@@ -10,18 +10,105 @@ class ImageMaker:
     def __init__(self):
         self.stars_cache = {}
         self.dust_cache = {}
-        self.make_explosions()
+        self.black_overlay = pygame.Surface((WIDTH, HEIGHT))
         self.make_dust()
+        self.make_explosions()
+        self.make_weapons()
         self.make_enemies()
+
+    def get_overlay(self):
+        return self.black_overlay
 
     def font(self, size=20):
         return pygame.Font("assets/font.ttf", size)
-    
+
+    def get_weapon(self, kind, color_supernova=False):
+        res = self.weapons[kind].copy()
+        if kind == "supernova" and color_supernova:
+            res.fill((255, 200, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        return res
+
+    def get_particle(self):
+        return self.wh_particle
+
+    def get_wormhole(self, whsize, whw=15):
+        wh = pygame.Surface((whsize, whsize), pygame.SRCALPHA)
+        whrad, who = whsize / 2 - whsize / 6, whsize / 10
+        pygame.draw.circle(
+            wh,
+            "green",
+            (who + whrad, who + whrad),
+            whrad,
+            whw,
+            False,
+            True,
+            False,
+            False,
+        )
+        pygame.draw.circle(
+            wh,
+            "green",
+            (whsize - whrad - who, who + whrad),
+            whrad,
+            whw,
+            True,
+            False,
+            False,
+            False,
+        )
+        pygame.draw.circle(
+            wh,
+            "green",
+            (whrad + who, whsize - whrad - who),
+            whrad,
+            whw,
+            False,
+            False,
+            True,
+            False,
+        )
+        pygame.draw.circle(
+            wh,
+            "green",
+            (whsize - whrad - who, whsize - whrad - who),
+            whrad,
+            whw,
+            False,
+            False,
+            False,
+            True,
+        )
+        wh.blit(self.get_dust(whsize, (0, 255, 0, 150), False), (0, 0))
+        return wh
+
+    def make_weapons(self):
+        self.wh_particle = self.get_dust(WHITEHOLE_PARTICLE_SIZE, (0, 100, 200, 150))
+        self.weapons = {
+            "purple_hole": self.get_blackhole(
+                WEAPONS["purple_hole"][WEAPON_SIZEID] / 2, (120, 0, 255), mult=2
+            ),
+            "white_hole": self.get_blackhole(
+                WEAPONS["white_hole"][WEAPON_SIZEID] / 2, (0, 100, 255), "white", 2
+            ),
+            "supernova": self.get_blackhole(
+                WEAPONS["supernova"][WEAPON_SIZEID],
+                (255, 255, 255),
+                (255, 255, 255),
+                1.4,
+            ),
+            "worm_hole": self.get_wormhole(WEAPONS["worm_hole"][WEAPON_SIZEID]),
+            "worm_holeB": self.get_wormhole(
+                WEAPONS["worm_hole"][WEAPON_SIZEID] * 2, 15 * 2
+            ),
+        }
+
     def make_explosions(self):
-        self.explosions = [pygame.Surface((200, 200), pygame.SRCALPHA) for _ in range(2)]
+        self.explosions = [
+            pygame.Surface((200, 200), pygame.SRCALPHA) for _ in range(2)
+        ]
         for exp, s in zip(self.explosions, (10, 2)):
             pygame.draw.circle(exp, "white", (100, 100), 100, s)
-    
+
     def get_explosion(self, color, i):
         part = self.explosions[i].copy()
         part.fill(color, special_flags=pygame.BLEND_RGBA_MULT)
@@ -112,12 +199,14 @@ class ImageMaker:
         )
         return surf
 
-    def get_blackhole(self, size):
-        dustsize = int(size * BLACKHOLE_MULT)
+    def get_blackhole(
+        self, size, color=(255, 220, 0), centercolor="black", mult=BLACKHOLE_MULT
+    ):
+        dustsize = int(size * mult)
         result = pygame.Surface((dustsize, dustsize), pygame.SRCALPHA)
         circle = pygame.Surface((size, size), pygame.SRCALPHA)
-        pygame.draw.circle(circle, "black", (size // 2, size // 2), size // 2)
-        dust = self.get_dust(dustsize, (255, 220, 0), False)
+        pygame.draw.circle(circle, centercolor, (size // 2, size // 2), size // 2)
+        dust = self.get_dust(dustsize, color, False)
         result.blit(dust, (0, 0))
         result.blit(
             circle, circle.get_rect().move_to(center=(dustsize / 2, dustsize / 2))
@@ -149,15 +238,19 @@ class ImageMaker:
         ]
 
     def make_enemy_blue(self, w, h):
-        tw = w / 3
+        tw = w / 2.5
+        tl, tr = w / 2 - tw / 2, w / 2 + tw / 2
+        sth = h - h / 1.8
+        tm = h - h / 3
         return [
             (0, h),
-            (tw / 2, 0),
-            (tw, h),
-            (tw + tw / 2, 0),
-            (tw * 2, h),
-            (tw * 2 + tw / 2, 0),
+            (tl / 2, sth),
+            (tl, tm),
+            (w / 2, 0),
+            (tr, tm),
+            (tr + tl / 2, sth),
             (w, h),
+            (w / 2, h - h / 6),
         ]
 
     def make_enemies(self):

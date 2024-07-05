@@ -39,6 +39,7 @@ class AsteroidResource(chunks.Sprite):
         self.can_destroy = True
         for bh in data.game.blackholes:
             if bh.collideextern(self.rect.center):
+                data.game.collected_one_resource = True
                 self.blackhole = bh
                 self.can_destroy = False
                 self.blackhole.resources.append(self)
@@ -54,8 +55,9 @@ class AsteroidResource(chunks.Sprite):
         ]
         if data.game.collected_resources < data.game.resources_amount:
             data.game.collected_resources += 1
-        data.player.heal()
-        data.game.explosion(self.rect.center, self.rect.w*2)
+        data.game.inventory[self.resource] += 1
+        data.player.heal(RESOURCES[self.resource][RESOURCE_HEALID])
+        data.game.explosion(self.rect.center, self.rect.w * 2)
         self.kill()
 
     def update(self):
@@ -75,8 +77,6 @@ class AsteroidResource(chunks.Sprite):
         if self.can_destroy:
             if self.rect.colliderect(UNIVERSE_RECT):
                 self.rect.center += self.dir * self.speed * data.dt
-            # if data.ticks-self.escape_time>=RESOURCE_COOLDOWN:
-            #    self.kill()
         else:
             follow = data.player.get_follow_point() + self.follow_offset
             dir = follow - self.rect.center
@@ -144,7 +144,7 @@ class Asteroid(chunks.Sprite):
             self.destroy()
 
     def destroy(self):
-        data.game.explosion(self.rect.center, self.rect.w*1.5)
+        data.game.explosion(self.rect.center, self.rect.w * 1.5)
         self.destroyed = True
         self.kill()
         for res in self.resources:
@@ -167,7 +167,7 @@ class Asteroid(chunks.Sprite):
         self.hitbox.center = self.rect.center
         for res in self.resources:
             res.rect.center = self.rect.center + res.rel_pos
-
+        return
         for bh in data.game.blackholes:
             if bh.collidecenter(self.rect.center):
                 self.destroy()

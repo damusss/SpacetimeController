@@ -2,6 +2,8 @@ import pygame
 import support
 import data
 import math
+import weapon
+import particle
 from consts import *
 
 
@@ -23,9 +25,13 @@ class Player:
         self.health = PLAYER_HEALTH
         self.hitbox = self.rect.inflate(self.rect.w / 3, self.rect.h / 3)
         self.hovering_resources = False
+        self.trail = particle.Trail(PLAYER_TRAIL_SPEED, PLAYER_TRAIL_COL)
+        self.last_trail = data.ticks
+        self.damage_time = -9999
 
     def damage(self, amount=1):
         self.health -= amount
+        self.damage_time = data.ticks
         if self.health <= 0:
             self.health = 0
             data.game.gameover()
@@ -34,6 +40,15 @@ class Player:
         self.health += amount
         if self.health > PLAYER_HEALTH:
             self.health = PLAYER_HEALTH
+
+    def attack(self, kind):
+        if kind != "worm_hole":
+            pos = self.rect.center - (
+                self.dir * WEAPONS["purple_hole"][WEAPON_SIZEID] / 3
+            )
+        else:
+            pos = self.rect.center
+        weapon.WEAPON_CLASSES[kind](pos)
 
     def get_follow_point(self):
         return self.rect.center - self.dir * (self.rect.h * 1.5)
@@ -44,9 +59,15 @@ class Player:
         self.collided_object = False
 
         keys = pygame.key.get_pressed()
+        mouse = pygame.mouse.get_pressed()
         dir_angle = self.dir.angle_to(self.prev_dir)
 
-        if keys[pygame.K_SPACE] or keys[pygame.K_w] or keys[pygame.K_UP]:
+        if (
+            keys[pygame.K_SPACE]
+            or keys[pygame.K_w]
+            or keys[pygame.K_UP]
+            or mouse[pygame.BUTTON_LEFT - 1]
+        ):
             self.speed += PLAYER_ACC * data.dt
             self.speed -= dir_angle * 4
         else:
@@ -60,6 +81,7 @@ class Player:
         self.resource_collisions()
         self.asteroid_collisions()
         self.blackhole_collisions()
+        self.weapon_collisions()
 
         if not self.collided_object:
             self.push_speed -= PLAYER_ACC * 3 * data.dt
@@ -69,6 +91,28 @@ class Player:
         self.image = pygame.transform.rotate(self.static_image, self.angle)
         self.static_rect = self.image.get_rect(center=CENTER)
         self.hitbox = self.rect.inflate(self.rect.w / 4, self.rect.h / 4)
+
+        if not WEB:
+            points = (
+                self.rect.center
+                - ((self.dir * self.rect.h).rotate(90) * 0.2)
+                + (-self.dir * 12),
+                self.rect.center
+                - ((self.dir * self.rect.h).rotate(-90) * 0.2)
+                + (-self.dir * 12),
+            )
+            self.trail.set_start(points)
+            if (
+                data.ticks - self.last_trail >= PLAYER_TRAIL_COOLDOWN
+                and self.speed > 0
+                and data.game.wormhole is None
+            ):
+                self.last_trail = data.ticks
+                self.trail.add(points)
+            if data.ticks - self.damage_time < 1000:
+                self.trail.color = (255, 0, 50)
+            else:
+                self.trail.color = PLAYER_TRAIL_COL
 
     def update_directions(self):
         self.dir = pygame.Vector2(pygame.mouse.get_pos()) - CENTER
@@ -102,6 +146,7 @@ class Player:
                 if len(self.resources) < PLAYER_MAX_RESOURCES:
                     res.can_destroy = False
                     self.resources.append(res)
+                    data.game.grabbed_one_resource = True
                 else:
                     self.pickup_fail_time = pygame.time.get_ticks()
         else:
@@ -127,11 +172,21 @@ class Player:
                 self.collided_object = True
                 self.push_speed += PLAYER_ACC * 3 * data.dt
                 self.push_dir = pygame.Vector2(self.rect.center) - bh.pos
-                if self.push_dir.magnitude() != 0:
-                    self.push_dir.normalize_ip()
+                support.norm(self.push_dir)
                 break
 
+    def weapon_collisions(self):
+        for wb in data.game.weapon_bodies:
+            if wb.collidecenter(self.rect.center):
+                self.collided_object = True
+                self.push_speed += PLAYER_ACC * 3 * data.dt
+                self.push_dir = pygame.Vector2(self.rect.center) - wb.pos
+                support.norm(self.push_dir)
+
     def update_position(self):
+        if data.game.wormhole is not None:
+            return
+
         self.speed = pygame.math.clamp(self.speed, 0, PLAYER_SPEED)
         self.ret_speed = pygame.math.clamp(self.ret_speed, 0, PLAYER_SPEED * 2)
         self.push_speed = pygame.math.clamp(self.push_speed, 0, PLAYER_SPEED)
@@ -145,3 +200,5 @@ class Player:
 
     def draw(self):
         data.screen.blit(self.image, self.static_rect)
+        if not WEB:
+            self.trail.draw()

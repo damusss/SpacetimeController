@@ -70,9 +70,42 @@ def project_map(pos, topleft):
         ((y + UNIVERSE_INFLATED / 2) / UNIVERSE_INFLATED) * UI_MAP_SIZE,
     )
     rx, ry = x + topleft[0], y + topleft[1]
-    return pygame.math.clamp(rx, topleft[0], WIDTH), pygame.math.clamp(ry, topleft[1], HEIGHT)
+    return pygame.math.clamp(rx, topleft[0], WIDTH), pygame.math.clamp(
+        ry, topleft[1], HEIGHT
+    )
 
 
-def norm(vec):
+def clamp_pos(pos, rect):
+    return (
+        pygame.math.clamp(pos[0], rect.left, rect.right),
+        pygame.math.clamp(pos[1], rect.top, rect.bottom),
+    )
+
+
+def norm(vec: pygame.Vector2):
     if vec.magnitude() != 0:
         vec.normalize_ip()
+    return vec
+
+
+def lateral_points(pos, angle, n, dist):
+    pos = pygame.Vector2(pos)
+    angle = angle
+    leftx = 0
+    rightx = 0
+    side = "right"
+    points = []
+    for _ in range(n):
+        if side == "right":
+            rightx += dist
+            p = pygame.Vector2(rightx, 0)
+            p.rotate_ip(angle)
+            points.append(pos + p)
+            side = "left"
+        else:
+            leftx -= dist
+            p = pygame.Vector2(leftx, 0)
+            p.rotate_ip(angle)
+            points.append(pos + p)
+            side = "right"
+    return points
