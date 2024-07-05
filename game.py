@@ -106,6 +106,8 @@ class Game:
             if e.key == pygame.K_TAB:
                 self.grabbed_one_resource = True
                 self.collected_one_resource = True
+            if e.key == pygame.K_p:
+                particle.EasterEgg(data.player.rect.center)
             if e.key == pygame.K_ESCAPE:
                 if self.paused:
                     self.pause.unpause()

@@ -19,7 +19,7 @@ class MainMenu:
     def enter(self):
         self.make_bg()
 
-        self.title_font = data.images.font(115)
+        self.title_font = data.images.font(120)
         self.quit_font = data.images.font(32)
         self.play_font = data.images.font(65)
         self.other_font = data.images.font(35)

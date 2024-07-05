@@ -5,6 +5,21 @@ import chunks
 from consts import *
 
 
+class EasterEgg(chunks.Sprite):
+    def __init__(self, pos):
+        super().__init__(None, data.images.easteregg, [data.game.objects], pos)
+        self.static_image = self.image.copy()
+        self.angle = 0
+        self.born_time = data.ticks
+        
+    def update(self):
+        self.angle += data.dt*150
+        self.image = pygame.transform.rotate(self.static_image, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        if data.ticks-self.born_time >= 8000:
+            self.kill()
+
+
 class Trail:
     def __init__(self, speed, color):
         self.speed = speed

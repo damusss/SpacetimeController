@@ -11,6 +11,7 @@ class ImageMaker:
         self.stars_cache = {}
         self.dust_cache = {}
         self.black_overlay = pygame.Surface((WIDTH, HEIGHT))
+        self.easteregg = pygame.transform.scale_by(pygame.image.load("assets/pgcelogo.png").convert_alpha(), 0.5)
         self.make_dust()
         self.make_explosions()
         self.make_weapons()
