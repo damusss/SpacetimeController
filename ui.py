@@ -7,25 +7,25 @@ from consts import *
 
 class UI:
     def __init__(self):
+        self.resources_font = data.assets.font(18)
+        self.info_font = data.assets.font(12)
+        self.help_font = data.assets.font(16)
+        self.fps_font = data.assets.font(14)
+        self.giga_font = data.assets.font(150)
+        self.subgiga_font = data.assets.font(60)
+        self.big_font = data.assets.font(40)
+        self.btn_font = data.assets.font(35)
+        self.help_font_s = data.assets.font(14)
+        self.time_font = data.assets.font(50)
+
         self.resource_images = [
-            data.images.get_asteroid(
+            data.assets.get_asteroid(
                 UI_RESOURCE_SIZE / 2, UI_RESOURCE_DEFAULT, RESOURCE_POINTS_RANGE
             )
             for _ in range(PLAYER_MAX_RESOURCES)
         ]
-        self.resources_font = data.images.font(18)
-        self.info_font = data.images.font(10)
-        self.help_font = data.images.font(16)
-        self.resources_help = self.help_font.render("E / RMB", True, "white")
-        self.fps_font = data.images.font(14)
-        self.giga_font = data.images.font(150)
-        self.subgiga_font = data.images.font(60)
-        self.big_font = data.images.font(40)
-        self.btn_font = data.images.font(35)
-        self.help_font_s = data.images.font(14)
-
         self.inventory_images = {
-            kind: data.images.get_asteroid(
+            kind: data.assets.get_asteroid(
                 UI_RESOURCE_SIZE / 2,
                 RESOURCES[kind][RESOURCE_COLID],
                 RESOURCE_POINTS_RANGE,
@@ -34,7 +34,7 @@ class UI:
         }
         self.weapon_images = {
             kind: pygame.transform.scale(
-                data.images.get_weapon(kind, True), (UI_WEAPON_SIZE, UI_WEAPON_SIZE)
+                data.assets.get_weapon(kind, True), (UI_WEAPON_SIZE, UI_WEAPON_SIZE)
             )
             for kind in WEAPONS.keys()
         }
@@ -62,7 +62,7 @@ class UI:
             self.difficulty_txt,
         ]:
             txt.set_alpha(0)
-        self.overlay = data.images.get_overlay().copy()
+        self.overlay = data.assets.get_overlay().copy()
         self.help_font_s.align = pygame.FONT_CENTER
         self.help_grab = self.help_font_s.render(
             "CRASH IN TO THE ASTEROIDS UNTIL THEY BREAK AND GRAB THE RESOURCES (1/2)\nTAB TO SKIP",
@@ -74,9 +74,12 @@ class UI:
             True,
             "white",
         )
+        self.resources_help = self.help_font.render("E / RMB", True, "white")
+        self.time_txt, self.time_rect = None, None
 
         self.finish_alpha = 0
         self.overlay_alpha = 0
+        self.weapon_rects = []
 
         self.restart_button = button.Button(
             self.btn_font.render("RESTART", True, "white"),
@@ -91,7 +94,7 @@ class UI:
             BTN_HOVER,
             fixed_size=self.restart_button.text_img.get_size(),
         )
-        txt = data.images.font(30).render("| |", True, (160, 160, 160))
+        txt = data.assets.font(30).render("| |", True, (160, 160, 160))
         self.pause_button = button.Button(
             txt,
             txt.get_rect(
@@ -101,18 +104,34 @@ class UI:
             (200, 200, 200),
             draw_outline=False,
         )
+        self.grab_button = button.Button(
+            self.subgiga_font.render("E", True, "white"),
+            (WIDTH / 12, HEIGHT - HEIGHT / 8),
+            (120, 120, 120),
+            (200, 200, 200),
+            True,
+        )
 
     def update(self):
+        if data.game.finished:
+            if self.restart_button.update():
+                gor, cor = (
+                    data.game.grabbed_one_resource,
+                    data.game.collected_one_resource,
+                )
+                data.app.enter_game(data.game.difficulty_name, data.game.mobile)
+                data.game.grabbed_one_resource = gor
+                data.game.collected_one_resource = cor
+            if self.menu_button.update():
+                data.app.enter_menu()
+            return
         if self.pause_button.update():
             if data.game.paused:
                 data.game.pause.unpause()
             else:
                 data.game.pause.pause()
-        if data.game.finished:
-            if self.restart_button.update():
-                data.app.enter_game(data.game.difficulty_name)
-            if self.menu_button.update():
-                data.app.enter_menu()
+        if data.game.mobile:
+            self.grab_button.update()
 
     def draw_finish(self):
         self.finish_alpha += data.dt * UI_FINISH_SPEED
@@ -146,7 +165,13 @@ class UI:
         self.draw_generic_finish(self.gameover_txt, self.gameover_subtitle)
 
     def draw_win(self):
-        self.draw_generic_finish(self.win_txt, self.win_subtitle)
+        bottom = self.draw_generic_finish(self.win_txt, self.win_subtitle)
+        time = self.time_font.render(
+            f"{'NEW BEST ' if data.game.is_best_time else ''}TIME: {int((data.game.time_elapsed)/1000)} S",
+            True,
+            "white",
+        )
+        data.screen.blit(time, time.get_rect(midtop=(WIDTH / 2, bottom + UI_S * 2)))
 
     def draw_generic_finish(self, title, subtitle):
         title_rect = title.get_rect(midtop=(WIDTH / 2, HEIGHT / 8))
@@ -157,6 +182,7 @@ class UI:
             self.difficulty_txt,
             self.difficulty_txt.get_rect(midbottom=(WIDTH / 2, HEIGHT)),
         )
+        return subtitle_rect.bottom
 
     def draw(self):
         self.draw_resources()
@@ -164,7 +190,10 @@ class UI:
         self.draw_health()
         self.draw_weapons()
         self.draw_help()
+        self.draw_time()
         self.pause_button.draw()
+        if data.game.mobile:
+            self.grab_button.draw()
 
         if WEB:
             txt = self.info_font.render(
@@ -172,20 +201,40 @@ class UI:
             )
             data.screen.blit(txt, txt.get_rect(bottomleft=(0, HEIGHT)))
 
+    def draw_time(self):
+        if not data.game.paused:
+            self.time_txt = self.resources_font.render(
+                f"{int((data.ticks-data.game.start_time)/1000)} S", True, "white"
+            )
+            self.time_rect = self.time_txt.get_rect(
+                topright=(self.pause_button.rect.left - UI_S, UI_S)
+            )
+        if self.time_txt is not None:
+            data.screen.blit(self.time_txt, self.time_rect)
+
     def draw_help(self):
         midbottom = (WIDTH / 2, HEIGHT - UI_S * 3)
+        r1, r2 = (
+            self.help_grab.get_rect(midbottom=midbottom),
+            self.help_collect.get_rect(midbottom=midbottom),
+        )
+        mpos = pygame.mouse.get_pos()
+        if (
+            data.game.mobile
+            and (r1.collidepoint(mpos) or r2.collidepoint(mpos))
+            and pygame.mouse.get_pressed()[pygame.BUTTON_LEFT - 1]
+        ):
+            data.game.grabbed_one_resource = True
+            data.game.collected_one_resource = True
         if not data.game.grabbed_one_resource:
-            data.screen.blit(
-                self.help_grab, self.help_grab.get_rect(midbottom=midbottom)
-            )
+            data.screen.blit(self.help_grab, r1)
             return
         if not data.game.collected_one_resource:
-            data.screen.blit(
-                self.help_collect, self.help_collect.get_rect(midbottom=midbottom)
-            )
+            data.screen.blit(self.help_collect, r2)
 
     def draw_weapons(self):
         y = UI_HEALTH_SIZE[1] + UI_S
+        self.weapon_rects = []
         for i, kind in enumerate(list(WEAPONS.keys())):
             price = WEAPONS[kind][WEAPON_PRICEID]
             resource = WEAPONS[kind][WEAPON_RESOURCEID]
@@ -208,6 +257,7 @@ class UI:
             number_rect = number_img.get_rect(midleft=(UI_S, weapon_rect.centery))
             data.screen.blit(number_img, number_rect)
             weapon_rect.midleft = (self.number_offset + UI_S, number_rect.centery)
+            self.weapon_rects.append((weapon_rect, kind))
             data.screen.blit(weapon_img, weapon_rect)
             amount_rect = amount_img.get_rect(
                 midleft=(weapon_rect.right + UI_S, weapon_rect.centery)
@@ -302,7 +352,10 @@ class UI:
             )
         for bh in data.game.blackholes:
             pygame.draw.circle(
-                data.screen, "yellow", support.project_map(bh.pos, map_rect.topleft), 3
+                data.screen,
+                "yellow",
+                support.project_map(bh.pos, map_rect.topleft),
+                max(SCALE_RES(3), 2),
             )
         if data.game.pack is not None:
             for enemy in data.game.pack.enemies:

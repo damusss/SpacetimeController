@@ -12,7 +12,7 @@ class AsteroidResource(chunks.Sprite):
         self.resource = resource
         size = support.randrange((parent.rect.w // 6, parent.rect.w // 3))
         self.color = support.alter_color(RESOURCES[resource][RESOURCE_COLID])
-        image = data.images.get_asteroid(size // 2, self.color, RESOURCE_POINTS_RANGE)
+        image = data.assets.get_asteroid(size // 2, self.color, RESOURCE_POINTS_RANGE)
         direction = support.randvec(parent.rect.w // 4)
         self.rel_pos = direction
         self.dir = support.randvec()
@@ -55,9 +55,25 @@ class AsteroidResource(chunks.Sprite):
         ]
         if data.game.collected_resources < data.game.resources_amount:
             data.game.collected_resources += 1
+        elif not data.game.finished:
+            data.game.win()
+        prev_canbuy = {
+            wn: data.game.inventory[WEAPONS[wn][WEAPON_RESOURCEID]]
+            >= WEAPONS[wn][WEAPON_PRICEID]
+            for wn in WEAPONS.keys()
+        }
         data.game.inventory[self.resource] += 1
+        canbuy = {
+            wn: data.game.inventory[WEAPONS[wn][WEAPON_RESOURCEID]]
+            >= WEAPONS[wn][WEAPON_PRICEID]
+            for wn in WEAPONS.keys()
+        }
+        for wn, cb in canbuy.items():
+            if cb != prev_canbuy[wn]:
+                data.assets.play("power_unlock")
         data.player.heal(RESOURCES[self.resource][RESOURCE_HEALID])
         data.game.explosion(self.rect.center, self.rect.w * 2)
+        data.assets.play("collect")
         self.kill()
 
     def update(self):
@@ -101,7 +117,7 @@ class AsteroidFragment(chunks.Sprite):
         self.create_time = data.ticks - random.randint(300, 500)
         super().__init__(
             None,
-            data.images.get_asteroid(size // 2, color, RESOURCE_POINTS_RANGE),
+            data.assets.get_asteroid(size // 2, color, RESOURCE_POINTS_RANGE),
             data.game.objects,
             center,
         )
@@ -117,7 +133,7 @@ class Asteroid(chunks.Sprite):
     def __init__(self, center):
         size = support.randrange(ASTEROID_SIZE_RANGE)
         self.color = ASTEROID_COL1.lerp(ASTEROID_COL2, random.random())
-        image = data.images.get_asteroid(size // 2, self.color)
+        image = data.assets.get_asteroid(size // 2, self.color)
         self.amount = support.randrange(RESOURCE_AMOUNT_RANGE)
         self.health = self.amount
         self.resource = random.choice(list(RESOURCES.keys()))
@@ -142,10 +158,13 @@ class Asteroid(chunks.Sprite):
         ]
         if self.health <= 0:
             self.destroy()
+        else:
+            data.assets.play("asteroid_hit")
 
     def destroy(self):
         data.game.explosion(self.rect.center, self.rect.w * 1.5)
         self.destroyed = True
+        data.assets.play("small_explosion")
         self.kill()
         for res in self.resources:
             res.escape()
@@ -154,20 +173,16 @@ class Asteroid(chunks.Sprite):
         if self.destroyed:
             return
         in_universe = self.rect.colliderect(UNIVERSE_RECT)
+        if data.ticks - self.hit_time >= ASTEROID_HIT_COOLDOWN:
+            self.is_hit = False
         if not in_universe:
             self.dir = support.randvec()
             return
         if data.ticks - self.change_time >= 60000:
             self.dir = support.randvec()
             self.change_time = data.ticks
-        if data.ticks - self.hit_time >= ASTEROID_HIT_COOLDOWN:
-            self.is_hit = False
 
         self.rect.topleft += self.dir * self.speed * data.dt
         self.hitbox.center = self.rect.center
         for res in self.resources:
             res.rect.center = self.rect.center + res.rel_pos
-        return
-        for bh in data.game.blackholes:
-            if bh.collidecenter(self.rect.center):
-                self.destroy()

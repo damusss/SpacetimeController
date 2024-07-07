@@ -3,6 +3,7 @@ import data
 import support
 import chunks
 import particle
+import random
 from consts import *
 
 
@@ -14,7 +15,7 @@ class Weapon(chunks.Sprite):
         self.duration = WEAPONS[kind][WEAPON_DURATIONID]
         self.born_time = data.ticks
         super().__init__(
-            None, data.images.get_weapon(kind), data.game.weapon_groups[kind], pos
+            None, data.assets.get_weapon(kind), data.game.weapon_groups[kind], pos
         )
 
     def check_finish(self):
@@ -38,6 +39,12 @@ class PurpleHole(Weapon):
     def collidecenter(self, pos):
         return self.pos.distance_to(pos) <= self.size / 4
 
+    def on_finish(self):
+        data.assets.play("suck")
+        particle.GrowParticle(
+            self.rect.center, self.rect.w, 2, WEAPON_DISAPPEAR_SPEED, self.image
+        )
+
 
 class WhiteHole(Weapon):
     def __init__(self, pos):
@@ -48,22 +55,21 @@ class WhiteHole(Weapon):
         return self.pos.distance_to(pos) <= self.size / 4
 
     def shoot(self):
+        # if random.randint(0, 100) < 30:
+        data.assets.play("wh_attack")
         particle.MoveParticle(
             self.pos,
             support.randvec(),
             WHITEHOLE_PARTICLE_SPEED,
             self.radius,
-            data.images.get_particle(),
+            data.assets.get_particle(),
             [data.game.enemy_damages],
         )
 
     def on_finish(self):
+        data.assets.play("suck")
         particle.GrowParticle(
-            self.pos,
-            WEAPONS["white_hole"][WEAPON_SIZEID] / 2,
-            WEAPONS["white_hole"][WEAPON_SIZEID] * 1.2,
-            500,
-            data.images.get_particle(),
+            self.rect.center, self.rect.w, 2, WEAPON_DISAPPEAR_SPEED, self.image
         )
 
     def update(self):
@@ -77,6 +83,7 @@ class Supernova(Weapon):
     def __init__(self, pos):
         super().__init__(pos, "supernova")
         self.original_image = self.image
+        data.assets.play("supernova")
 
     def collidecenter(self, pos):
         return self.pos.distance_to(pos) <= self.size / (1.4 * 2)
@@ -91,12 +98,14 @@ class Supernova(Weapon):
         self.image.fill(color, special_flags=pygame.BLEND_RGB_MULT)
 
     def on_finish(self):
+        data.assets.play("big_explosion")
         particle.SupernovaExplosion(self.pos, SUPERNOVA_COLORS[0])
 
 
 class WormHole(Weapon):
     def __init__(self, pos):
         super().__init__(pos, "worm_hole")
+        data.assets.play("worm_hole")
         data.game.wormhole = self
         self.teleport_pos = pygame.Vector2(support.randpos(UNIVERSE_RECT))
         self.static_image = self.image.copy()
@@ -104,6 +113,7 @@ class WormHole(Weapon):
         self.angle = 0
 
     def on_finish(self):
+        data.assets.play("small_explosion")
         data.game.wormhole = None
         data.player.rect.center = self.teleport_pos
         particle.GrowParticle(
@@ -111,7 +121,7 @@ class WormHole(Weapon):
             1,
             self.rect.w * 1.5,
             700,
-            data.images.get_weapon("worm_holeB"),
+            data.assets.get_weapon("worm_holeB"),
             [data.game.objects],
         )
 

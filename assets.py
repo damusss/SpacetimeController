@@ -3,25 +3,88 @@ import support
 from consts import *
 import data
 import math
+import os
 import random
 
 
-class ImageMaker:
+class Assets:
     def __init__(self):
         self.stars_cache = {}
         self.dust_cache = {}
         self.black_overlay = pygame.Surface((WIDTH, HEIGHT))
-        self.easteregg = pygame.transform.scale_by(pygame.image.load("assets/pgcelogo.png").convert_alpha(), 0.5)
+        self.easteregg = pygame.transform.scale_by(
+            pygame.image.load("assets/ee.png").convert_alpha(), 0.5
+        )
+        self.completed = self.make_completed()
         self.make_dust()
         self.make_explosions()
         self.make_weapons()
         self.make_enemies()
+        self.load_sounds()
+
+    def load_sound(self, name, vol=1):
+        sound = pygame.mixer.Sound(f"assets/sfx/{name}.ogg")
+        sound.set_volume(vol)
+        return {name: {"obj": sound, "vol": vol}}
+
+    def load_sounds(self):
+        self.sounds = {
+            **self.load_sound("asteroid_hit", 0.4),  # FINAL
+            **self.load_sound("power_unlock", 1),  # FINAL
+            **self.load_sound("big_explosion", 1),  # FINAL
+            **self.load_sound("grab", 0.32),  # FINAL ##
+            **self.load_sound("button_click", 1),  # FINAL #
+            **self.load_sound("button_hover", 1),  # FINAL ##
+            **self.load_sound("collect", 0.2),  # FINAL
+            **self.load_sound("player_damage", 1),  # FINAL
+            **self.load_sound("small_explosion", 1.2),  # FINAL
+            **self.load_sound("suck", 0.8),  # FINAL
+            **self.load_sound("wh_attack", 1),  # FINAL
+            **self.load_sound("gameover", 1),  # FINAL
+            **self.load_sound("supernova", 0.5),  # FINAL
+            **self.load_sound("teleport", 0.8),  # FINAL #
+            **self.load_sound("worm_hole", 0.5),  # FINAL
+        }
+
+    def play(self, name):
+        self.sounds[name]["obj"].play()
+
+    def music_play(self, name):
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load(f"assets/{name}.ogg")
+        pygame.mixer.music.play(-1, 0, 1000)
+
+    def music_pause(self):
+        pygame.mixer.music.pause()
+
+    def music_resume(self):
+        pygame.mixer.music.unpause()
+
+    def update_volumes(self):
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.set_volume(data.app.music_vol)
+        for s in self.sounds.values():
+            s["obj"].set_volume(s["vol"] * data.app.fx_vol)
+
+    def get_completed(self):
+        return self.completed.copy()
+
+    def make_completed(self):
+        font = self.font(12)
+        txt = font.render("VICTORY", True, "green")
+        w = txt.get_width() + SCALE_RES(10)
+        base = pygame.Surface((w, w), pygame.SRCALPHA)
+        txt = pygame.transform.rotate(txt, 30)
+        pygame.draw.circle(base, (0, 20, 0), (w / 2, w / 2), w / 2)
+        pygame.draw.circle(base, "green", (w / 2, w / 2), w / 2, 3)
+        base.blit(txt, txt.get_rect(center=(w / 2, w / 2)))
+        return base
 
     def get_overlay(self):
         return self.black_overlay
 
     def font(self, size=20):
-        return pygame.Font("assets/font.ttf", size)
+        return pygame.Font("assets/font.ttf", SCALE_RES(size))
 
     def get_weapon(self, kind, color_supernova=False):
         res = self.weapons[kind].copy()
@@ -105,7 +168,7 @@ class ImageMaker:
 
     def make_explosions(self):
         self.explosions = [
-            pygame.Surface((200, 200), pygame.SRCALPHA) for _ in range(2)
+            pygame.Surface(((200), (200)), pygame.SRCALPHA) for _ in range(2)
         ]
         for exp, s in zip(self.explosions, (10, 2)):
             pygame.draw.circle(exp, "white", (100, 100), 100, s)
@@ -177,7 +240,7 @@ class ImageMaker:
         return result
 
     def make_dust(self):
-        s = 300
+        s = SCALE_RES(300)
         self.dust_surf = pygame.Surface((s, s), pygame.SRCALPHA)
         for x in range(self.dust_surf.get_width()):
             for y in range(self.dust_surf.get_height()):

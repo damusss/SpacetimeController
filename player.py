@@ -4,6 +4,7 @@ import data
 import math
 import weapon
 import particle
+import functools
 from consts import *
 
 
@@ -14,7 +15,7 @@ class Player:
         self.push_dir = pygame.Vector2()
         self.prev_dir = self.dir.copy()
         self.speed = 0
-        self.static_image = data.images.get_player()
+        self.static_image = data.assets.get_player()
         self.image = self.static_image
         self.static_rect = self.rect.copy()
         self.angle = 0
@@ -32,6 +33,7 @@ class Player:
     def damage(self, amount=1):
         self.health -= amount
         self.damage_time = data.ticks
+        data.assets.play("player_damage")
         if self.health <= 0:
             self.health = 0
             data.game.gameover()
@@ -48,6 +50,18 @@ class Player:
             )
         else:
             pos = self.rect.center
+        img = data.assets.get_weapon(kind, True)
+        data.assets.play("suck")
+        particle.GrowParticle(
+            pos,
+            2,
+            img.get_width(),
+            150,
+            img,
+            finish_func=functools.partial(self.finish_attack, kind, pos),
+        )
+
+    def finish_attack(self, kind, pos):
         weapon.WEAPON_CLASSES[kind](pos)
 
     def get_follow_point(self):
@@ -140,12 +154,15 @@ class Player:
                 if res.rect.colliderect(self.rect):
                     hovered.append(res)
                     self.hovering_resources = True
-        if mouse[pygame.BUTTON_RIGHT - 1] or keys[pygame.K_e]:
+        if (mouse[pygame.BUTTON_RIGHT - 1] or keys[pygame.K_e]) or (
+            data.game.mobile and data.game.ui.grab_button.selected
+        ):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             for res in hovered:
                 if len(self.resources) < PLAYER_MAX_RESOURCES:
                     res.can_destroy = False
                     self.resources.append(res)
+                    data.assets.play("grab")
                     data.game.grabbed_one_resource = True
                 else:
                     self.pickup_fail_time = pygame.time.get_ticks()

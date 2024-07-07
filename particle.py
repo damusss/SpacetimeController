@@ -7,16 +7,16 @@ from consts import *
 
 class EasterEgg(chunks.Sprite):
     def __init__(self, pos):
-        super().__init__(None, data.images.easteregg, [data.game.objects], pos)
+        super().__init__(None, data.assets.easteregg, [data.game.objects], pos)
         self.static_image = self.image.copy()
         self.angle = 0
         self.born_time = data.ticks
-        
+
     def update(self):
-        self.angle += data.dt*150
+        self.angle -= data.dt * 150
         self.image = pygame.transform.rotate(self.static_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        if data.ticks-self.born_time >= 8000:
+        if data.ticks - self.born_time >= 8000:
             self.kill()
 
 
@@ -57,7 +57,10 @@ class Trail:
 
 
 class GrowParticle(chunks.Sprite):
-    def __init__(self, pos, start_size, end_size, time, image, groups=None):
+    def __init__(
+        self, pos, start_size, end_size, time, image, groups=None, finish_func=None
+    ):
+        self.finish_func = finish_func
         if groups is None:
             groups = []
         self.start_size = start_size
@@ -70,11 +73,22 @@ class GrowParticle(chunks.Sprite):
         self.update()
 
     def update(self):
-        self.size = (self.end_size * (data.ticks - self.start_time)) / self.time
+        if self.start_size < self.end_size:
+            self.size = (self.end_size * (data.ticks - self.start_time)) / self.time
+        else:
+            self.size = pygame.math.lerp(
+                self.start_size,
+                self.end_size,
+                (data.ticks - self.start_time) / self.time,
+            )
         self.image = pygame.transform.scale(self.original_image, (self.size, self.size))
         self.rect = self.image.get_rect(center=self.rect.center)
-        if self.size > self.end_size:
+        if (self.start_size < self.end_size and self.size >= self.end_size) or (
+            self.start_size > self.end_size and self.size <= self.end_size
+        ):
             self.kill()
+            if self.finish_func:
+                self.finish_func()
             return
 
 
@@ -108,7 +122,7 @@ class Explosion(GrowParticle):
             startsize,
             size,
             EXPLOSION_TIME,
-            data.images.get_explosion(color, 1 if color == EXPLOSION_GRAY else 0),
+            data.assets.get_explosion(color, 1 if color == EXPLOSION_GRAY else 0),
         )
         if color != EXPLOSION_GRAY:
             Explosion(pos, size, EXPLOSION_GRAY, startsize / 2)
@@ -138,7 +152,7 @@ class SupernovaExplosion(GrowParticle):
             WEAPONS["supernova"][WEAPON_SIZEID] / 2,
             WEAPONS["supernova"][WEAPON_RADID] * 2,
             SUPERNOVA_EXPLOSION_TIME,
-            data.images.get_explosion(color, 0),
+            data.assets.get_explosion(color, 0),
             [data.game.enemy_damages],
         )
 

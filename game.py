@@ -5,22 +5,24 @@ import data
 import player
 import chunks
 import asteroid
-import space
 import ui
 import enemy
 import random
 import particle
 import pause
+import os
+import json
 
 
 class Game:
     def __init__(self): ...
 
-    def enter(self, difficulty_name="normal"):
+    def enter(self, difficulty_name="normal", mobile=False):
         self.difficulty_name = difficulty_name
         self.difficulty = DIFFICULTIES[difficulty_name]
         self.resources_amount = DIFFICULTY_RESOURCES[difficulty_name]
         self.total_resources = 0
+        self.mobile = mobile
 
         self.grabbed_one_resource = False
         self.collected_one_resource = False
@@ -28,6 +30,19 @@ class Game:
         self.finish_reason = "none"
         self.finish_time = -9999
         self.paused = False
+        self.start_time = data.ticks
+        self.time_elapsed = -1
+        self.is_best_time = False
+
+        if os.path.exists("data.json"):
+            with open("data.json", "r") as file:
+                tdata = json.load(file)
+                if isinstance(tdata, dict):
+                    for k, v in tdata.items():
+                        if v != -1:
+                            self.grabbed_one_resource = True
+                            self.collected_one_resource = True
+                            break
 
         data.player = player.Player()
         self.ui = ui.UI()
@@ -66,32 +81,59 @@ class Game:
 
         for _ in range(BLACKHOLE_AMOUNT):
             pos = support.randpos(UNIVERSE_RECT)
-            space.BlackHole(pos)
+            chunks.BlackHole(pos)
 
         self.collected_resources = 0
         self.inventory = dict.fromkeys(list(RESOURCES.keys()), 0)
         self.starter_inventory = list(RESOURCES.keys())
-
+        self.pack_cooldown = ENEMY_PACK_COOLDOWN_START + ENEMY_PACK_COOLDOWN_DECREASE
         self.pack_destroyed()
         self.started = False
 
     def pack_destroyed(self):
         self.last_pack = data.ticks
         self.pack = None
-        self.pack_cooldown = support.randrange(ENEMY_PACK_COOLDOWN_RANGE)
+        self.pack_cooldown -= ENEMY_PACK_COOLDOWN_DECREASE
+        self.pack_cooldown = max(self.pack_cooldown, ENEMY_PACK_COOLDOWN_MIN)
 
     def gameover(self):
         self.explosion(data.player.rect.center, EXPLOSION_SIZE * 3)
-        self.finished = True
         self.finish_reason = "gameover"
-        self.finish_time = data.ticks
-        self.paused = False
+        self.finish()
+        data.assets.play("gameover")
 
     def win(self):
-        self.finished = True
         self.finish_reason = "win"
+        self.finish()
+        self.save_data()
+
+    def finish(self):
+        self.finished = True
         self.finish_time = data.ticks
         self.paused = False
+        self.time_elapsed = self.finish_time - self.start_time
+
+    def save_data(self):
+        if not os.path.exists("data.json"):
+            with open("data.json", "w") as file:
+                json.dump({key: -1 for key in DIFFICULTIES.keys()}, file)
+        newdata = None
+        with open("data.json", "r") as file:
+            curdata = json.load(file)
+            if not isinstance(curdata, dict):
+                curdata = {key: -1 for key in DIFFICULTIES.keys()}
+            if self.difficulty_name not in curdata:
+                curdata[self.difficulty_name] = -1
+            if (
+                self.time_elapsed < curdata[self.difficulty_name]
+                or curdata[self.difficulty_name] < 0
+            ):
+                curdata[self.difficulty_name] = self.time_elapsed
+                newdata = curdata
+                self.is_best_time = True
+        if newdata is not None:
+            with open("data.json", "w") as file:
+                json.dump(newdata, file)
 
     def event(self, e):
         if e.type == pygame.KEYDOWN:
@@ -113,6 +155,11 @@ class Game:
                     self.pause.unpause()
                 else:
                     self.pause.pause()
+        elif e.type == pygame.MOUSEBUTTONUP:
+            for wr, kind in self.ui.weapon_rects:
+                if wr.collidepoint(e.pos) and wr.collidepoint(data.app.start_click):
+                    self.try_attack(kind)
+                    break
 
     def try_attack(self, kind):
         price = WEAPONS[kind][WEAPON_PRICEID]
@@ -151,12 +198,13 @@ class Game:
                 self.pack = enemy.EnemyPack(pos, random.choice(list(ENEMIES.keys())))
 
         if not self.started:
+            data.assets.play("teleport")
             particle.GrowParticle(
                 data.player.rect.center,
                 1,
                 WEAPONS["worm_hole"][WEAPON_SIZEID] * 1.6,
                 700,
-                data.images.get_weapon("worm_holeB"),
+                data.assets.get_weapon("worm_holeB"),
                 [self.objects],
             )
             self.started = True

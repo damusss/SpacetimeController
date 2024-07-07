@@ -17,6 +17,23 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = pygame.FRect(topleft, self.image.get_size())
 
 
+class BlackHole(Sprite):
+    def __init__(self, pos):
+        size = support.randrange(BLACKHOLE_SIZE_RANGE)
+        self.size = size
+        self.pos = pygame.Vector2(pos)
+        self.resources = []
+        super().__init__(
+            None, data.assets.get_blackhole(size), data.game.blackholes, pos
+        )
+
+    def collidecenter(self, pos):
+        return self.pos.distance_to(pos) <= self.size / 2
+
+    def collideextern(self, pos):
+        return self.pos.distance_to(pos) <= (self.size * BLACKHOLE_MULT) / 2
+
+
 class Chunk:
     def __init__(self, topleft, str_pos):
         self.str_pos = str_pos
@@ -31,7 +48,7 @@ class Chunk:
             pos = pygame.Vector2(support.randpos(self.rect))
             size = random.randint(*STAR_SIZE_RANGE)
             color = support.randcol(200)
-            Sprite(pos, data.images.get_star(size, color), self.stars)
+            Sprite(pos, data.assets.get_star(size, color), self.stars)
 
         clipped = self.rect.clip(UNIVERSE_RECT)
         if clipped.w <= CHUNK_SIZE // 100 or clipped.h <= CHUNK_SIZE // 100:
@@ -43,7 +60,7 @@ class Chunk:
                 else:
                     color = DUST2_START.lerp(DUST2_END, random.uniform(0.0, 1.0))
                 color.a = 80
-                Sprite(pos, data.images.get_dust(size, (*color,)), self.dusts)
+                Sprite(pos, data.assets.get_dust(size, (*color,)), self.dusts)
         else:
             if random.randint(0, 100) < (DUST_CHANCE if not WEB else DUST_CHANCE / 4):
                 size = random.randint(*DUST_SIZE_RANGE)
@@ -53,7 +70,7 @@ class Chunk:
                 else:
                     color = DUST2_START.lerp(DUST2_END, random.uniform(0.0, 1.0))
                 color.a = 50
-                Sprite(pos, data.images.get_dust(size, (*color,)), self.dusts)
+                Sprite(pos, data.assets.get_dust(size, (*color,)), self.dusts)
 
     def update(self): ...
 

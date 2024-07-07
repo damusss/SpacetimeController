@@ -20,8 +20,9 @@ class Enemy(chunks.Sprite):
         self.blue_offset = support.randvec(random.randint(300, 800))
         self.angle = 0
         self.push_speed = self.speed / 10
+        self.sucked = False
 
-        super().__init__(None, data.images.get_enemy(enemy_type), pack.enemies, pos)
+        super().__init__(None, data.assets.get_enemy(enemy_type), pack.enemies, pos)
         self.hitbox = self.rect.inflate(self.rect.w / 3, self.rect.h / 3)
         self.static_image = self.image
 
@@ -56,6 +57,7 @@ class Enemy(chunks.Sprite):
         self.destroy()
 
     def destroy(self):
+        data.assets.play("small_explosion")
         data.game.explosion(self.rect.center, self.rect.w * 1.5)
         self.kill()
 
@@ -83,6 +85,9 @@ class Enemy(chunks.Sprite):
                 self.pushing = True
                 self.push_dir = ph.pos - pygame.Vector2(self.rect.center)
                 self.push_speed = PURPLEHOLE_SUCK_SPEED
+                if not self.sucked:
+                    self.sucked = True
+                    data.assets.play("suck")
 
     def get_behind(self, dist=3):
         return self.rect.center - (self.dir * self.rect.h * dist)

@@ -23,12 +23,13 @@ class Button:
         self.hover_color = hovercolor
         self.data = data
         self.draw_outline = draw_outline
+        inf = SCALE_RES(30)
         if fixed_size is not None:
             self.rect = (
-                pygame.Rect((0, 0), fixed_size).move_to(center=center).inflate(30, 30)
+                pygame.Rect((0, 0), fixed_size).move_to(center=center).inflate(inf, inf)
             )
         else:
-            self.rect = self.text_img.get_rect(center=center).inflate(30, 30)
+            self.rect = self.text_img.get_rect(center=center).inflate(inf, inf)
         self.selected = selected
         self.hovered = False
         self.clicked = False
@@ -43,6 +44,8 @@ class Button:
             self.offset = 0
 
         if self.rect.collidepoint(mpos):
+            if not self.hovered:
+                data.assets.play("button_hover")
             self.hovered = True
             if mouse[pygame.BUTTON_LEFT - 1]:
                 if not self.clicked:
@@ -50,9 +53,11 @@ class Button:
             else:
                 if self.clicked:
                     self.clicked = False
-                    if self.can_select:
-                        self.selected = not self.selected
-                    return True
+                    if self.rect.collidepoint(data.app.start_click):
+                        if self.can_select:
+                            self.selected = not self.selected
+                        data.assets.play("button_click")
+                        return True
         else:
             self.hovered = False
         return False
