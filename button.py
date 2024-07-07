@@ -16,6 +16,7 @@ class Button:
         fixed_size=None,
         data=None,
         draw_outline=True,
+        animate=True,
     ):
         self.text_img = text_img
         self.color = color
@@ -23,6 +24,11 @@ class Button:
         self.hover_color = hovercolor
         self.data = data
         self.draw_outline = draw_outline
+        self.animate = animate
+        self.selected = selected
+        self.hovered = False
+        self.clicked = False
+        self.offset = 0
         inf = SCALE_RES(30)
         if fixed_size is not None:
             self.rect = (
@@ -30,10 +36,6 @@ class Button:
             )
         else:
             self.rect = self.text_img.get_rect(center=center).inflate(inf, inf)
-        self.selected = selected
-        self.hovered = False
-        self.clicked = False
-        self.offset = 0
 
     def update(self) -> bool:
         mpos = pygame.mouse.get_pos()
@@ -142,6 +144,9 @@ class Button:
                 (self.rect.right - BUTTON_WS / 2, self.rect.bottom - BUTTON_R),
                 BUTTON_WS,
             )
+            return
+
+        if not self.animate:
             return
 
         x = self.rect.left + BUTTON_R + self.offset

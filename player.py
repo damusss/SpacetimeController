@@ -52,7 +52,7 @@ class Player:
             pos = self.rect.center
         img = data.assets.get_weapon(kind, True)
         data.assets.play("suck")
-        particle.GrowParticle(
+        p = particle.GrowParticle(
             pos,
             2,
             img.get_width(),
@@ -60,6 +60,8 @@ class Player:
             img,
             finish_func=functools.partial(self.finish_attack, kind, pos),
         )
+        if kind == "worm_hole":
+            data.game.wormhole = p
 
     def finish_attack(self, kind, pos):
         weapon.WEAPON_CLASSES[kind](pos)

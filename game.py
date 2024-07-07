@@ -142,9 +142,9 @@ class Game:
             if e.key == pygame.K_2:
                 self.try_attack("white_hole")
             if e.key == pygame.K_3:
-                self.try_attack("supernova")
-            if e.key == pygame.K_4:
                 self.try_attack("worm_hole")
+            if e.key == pygame.K_4:
+                self.try_attack("supernova")
             if e.key == pygame.K_TAB:
                 self.grabbed_one_resource = True
                 self.collected_one_resource = True

@@ -3,7 +3,7 @@ import support
 from consts import *
 import data
 import math
-import os
+import json
 import random
 
 
@@ -28,22 +28,23 @@ class Assets:
         return {name: {"obj": sound, "vol": vol}}
 
     def load_sounds(self):
+        sound = self.load_sound
         self.sounds = {
-            **self.load_sound("asteroid_hit", 0.4),  # FINAL
-            **self.load_sound("power_unlock", 1),  # FINAL
-            **self.load_sound("big_explosion", 1),  # FINAL
-            **self.load_sound("grab", 0.32),  # FINAL ##
-            **self.load_sound("button_click", 1),  # FINAL #
-            **self.load_sound("button_hover", 1),  # FINAL ##
-            **self.load_sound("collect", 0.2),  # FINAL
-            **self.load_sound("player_damage", 1),  # FINAL
-            **self.load_sound("small_explosion", 1.2),  # FINAL
-            **self.load_sound("suck", 0.8),  # FINAL
-            **self.load_sound("wh_attack", 1),  # FINAL
-            **self.load_sound("gameover", 1),  # FINAL
-            **self.load_sound("supernova", 0.5),  # FINAL
-            **self.load_sound("teleport", 0.8),  # FINAL #
-            **self.load_sound("worm_hole", 0.5),  # FINAL
+            **sound("asteroid_hit", 0.4),  # FINAL
+            **sound("power_unlock", 1),  # FINAL
+            **sound("big_explosion", 1),  # FINAL
+            **sound("grab", 0.32),  # FINAL ##
+            **sound("button_click", 0.8),  # FINAL #
+            **sound("button_hover", 0.8),  # FINAL ##
+            **sound("collect", 0.2),  # FINAL
+            **sound("player_damage", 1),  # FINAL
+            **sound("small_explosion", 1.2),  # FINAL
+            **sound("suck", 0.8),  # FINAL
+            **sound("wh_attack", 1),  # FINAL
+            **sound("gameover", 1),  # FINAL
+            **sound("supernova", 0.5),  # FINAL
+            **sound("teleport", 0.8),  # FINAL #
+            **sound("worm_hole", 0.5),  # FINAL
         }
 
     def play(self, name):
@@ -61,10 +62,11 @@ class Assets:
         pygame.mixer.music.unpause()
 
     def update_volumes(self):
-        if pygame.mixer.music.get_busy():
-            pygame.mixer.music.set_volume(data.app.music_vol)
+        pygame.mixer.music.set_volume(data.app.music_vol)
         for s in self.sounds.values():
             s["obj"].set_volume(s["vol"] * data.app.fx_vol)
+        with open("volume.json", "w") as file:
+            json.dump({"music": data.app.music_vol, "fx": data.app.fx_vol}, file)
 
     def get_completed(self):
         return self.completed.copy()

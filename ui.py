@@ -115,13 +115,7 @@ class UI:
     def update(self):
         if data.game.finished:
             if self.restart_button.update():
-                gor, cor = (
-                    data.game.grabbed_one_resource,
-                    data.game.collected_one_resource,
-                )
-                data.app.enter_game(data.game.difficulty_name, data.game.mobile)
-                data.game.grabbed_one_resource = gor
-                data.game.collected_one_resource = cor
+                support.restart()
             if self.menu_button.update():
                 data.app.enter_menu()
             return

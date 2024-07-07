@@ -136,7 +136,7 @@ class Asteroid(chunks.Sprite):
         image = data.assets.get_asteroid(size // 2, self.color)
         self.amount = support.randrange(RESOURCE_AMOUNT_RANGE)
         self.health = self.amount
-        self.resource = random.choice(list(RESOURCES.keys()))
+        self.resource = random.choice(RESOURCES_WEIGHTED)
         self.resources: list[AsteroidResource] = pygame.sprite.Group()
         self.destroyed = False
         self.dir = support.randvec()

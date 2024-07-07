@@ -6,7 +6,7 @@ pygame.init()
 WIDTH, HEIGHT = pygame.display.get_desktop_sizes()[0]
 CENTER = pygame.Vector2(WIDTH // 2, HEIGHT // 2)
 WINDOW_RECT = pygame.Rect(0, 0, WIDTH, HEIGHT)
-FPS = 144
+FPS = 120
 TITLE = "Spacetime Controller"
 WEB = False
 if sys.platform in ("emscripten", "wasi"):
@@ -74,6 +74,18 @@ RESOURCES = {
 }
 RESOURCE_COLID = 0
 RESOURCE_HEALID = 1
+RESOURCES_WEIGHTED = [
+    "ametist",
+    "ametist",
+    "iron",
+    "iron",
+    "gold",
+    "gold",
+    "emerald",
+    "emerald",
+    "ruby",
+    "quartz",
+]
 
 FRAGMENT_SIZE_RANGE = (SCALE_RES(8), SCALE_RES(15))
 FRAGMENT_SPEED_RANGE = (30, 60)
@@ -115,13 +127,12 @@ ENEMY_DAMAGEID = 1
 ENEMY_PACKSIZEID = 2
 ENEMY_SPEEDID = 3
 ENEMY_SIZEID = 4
-
 WEAPON_DISAPPEAR_SPEED = 400
 WEAPONS = {
     "purple_hole": [CHUNK_SIZE / 1.2, CHUNK_SIZE / 2, 6000, 10, "ametist"],
-    "white_hole": [CHUNK_SIZE, CHUNK_SIZE / 3, 5000, 8, "iron"],
-    "supernova": [CHUNK_SIZE / 2.7, CHUNK_SIZE / 4, 1000, 7, "gold"],
+    "white_hole": [CHUNK_SIZE, CHUNK_SIZE / 3, 5000, 10, "iron"],
     "worm_hole": [CHUNK_SIZE * 8, CHUNK_SIZE / 4, 1500, 9, "emerald"],
+    "supernova": [CHUNK_SIZE / 2.7, CHUNK_SIZE / 4, 1000, 8, "gold"],
 }
 WEAPON_RADID = 0
 WEAPON_SIZEID = 1
@@ -195,6 +206,7 @@ UI_OK_COL = (0, 220, 50)
 UI_BAD_COL = (220, 0, 50)
 UI_FINISH_SPEED = 90
 UI_OVERLAY_ALPHA = 200
+UI_PAUSE_INCREASE = HEIGHT / 15
 
 DIFFICULTIES = {"easy": 0, "normal": 1, "hard": 2, "extreme": 3}
 DIFFICULTY_RESOURCES = {"easy": 300, "normal": 500, "hard": 700, "extreme": 1000}

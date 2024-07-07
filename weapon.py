@@ -113,7 +113,7 @@ class WormHole(Weapon):
         self.angle = 0
 
     def on_finish(self):
-        data.assets.play("small_explosion")
+        data.assets.play("teleport")
         data.game.wormhole = None
         data.player.rect.center = self.teleport_pos
         particle.GrowParticle(

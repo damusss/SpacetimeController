@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import math
+import data
 from consts import *
 
 
@@ -109,3 +110,31 @@ def lateral_points(pos, angle, n, dist):
             points.append(pos + p)
             side = "right"
     return points
+
+
+def volume_str(volume):
+    if volume == 1:
+        return "MAX"
+    elif volume == 0:
+        return "OFF"
+    return str(round(volume, 1))
+
+
+def volume_change(volume, dir, name):
+    val = pygame.math.clamp(volume + (dir * 0.1), 0, 1)
+    if abs(1 - val) < 0.01:
+        val = 1
+    if abs(0 - val) < 0.01:
+        val = 0
+    setattr(data.app, name, val)
+    data.assets.update_volumes()
+
+
+def restart():
+    gor, cor = (
+        data.game.grabbed_one_resource,
+        data.game.collected_one_resource,
+    )
+    data.app.enter_game(data.game.difficulty_name, data.game.mobile)
+    data.game.grabbed_one_resource = gor
+    data.game.collected_one_resource = cor
