@@ -44,22 +44,25 @@ class Player:
             self.health = PLAYER_HEALTH
 
     def attack(self, kind):
-        if kind != "worm_hole":
+        pos = self.rect.center
+        if kind not in ["worm_hole", "shield"]:
             pos = self.rect.center - (
                 self.dir * WEAPONS["purple_hole"][WEAPON_SIZEID] / 3
             )
-        else:
-            pos = self.rect.center
         img = data.assets.get_weapon(kind, True)
         data.assets.play("suck")
-        p = particle.GrowParticle(
-            pos,
-            2,
-            img.get_width(),
-            150,
-            img,
-            finish_func=functools.partial(self.finish_attack, kind, pos),
-        )
+        if kind != "red_hole":
+            p = particle.GrowParticle(
+                pos,
+                2,
+                img.get_width(),
+                150,
+                img,
+                finish_func=functools.partial(self.finish_attack, kind, pos),
+                follow_player=kind == "shield",
+            )
+        else:
+            weapon.WEAPON_CLASSES[kind]()
         if kind == "worm_hole":
             data.game.wormhole = p
 
@@ -67,7 +70,7 @@ class Player:
         weapon.WEAPON_CLASSES[kind](pos)
 
     def get_follow_point(self):
-        return self.rect.center - self.dir * (self.rect.h * 1.5)
+        return self.rect.center - self.dir * (self.rect.h * 1.75)
 
     def update(self):
         self.update_directions()
@@ -85,7 +88,7 @@ class Player:
             or mouse[pygame.BUTTON_LEFT - 1]
         ):
             self.speed += PLAYER_ACC * data.dt
-            self.speed -= dir_angle * 4
+            self.speed -= dir_angle * 1.5
         else:
             if self.speed > 0:
                 self.speed -= PLAYER_FRICTION * data.dt
@@ -103,32 +106,34 @@ class Player:
             self.push_speed -= PLAYER_ACC * 3 * data.dt
 
         self.update_position()
+        if not WEB:
+            self.update_trail()
 
         self.image = pygame.transform.rotate(self.static_image, self.angle)
         self.static_rect = self.image.get_rect(center=CENTER)
         self.hitbox = self.rect.inflate(self.rect.w / 4, self.rect.h / 4)
 
-        if not WEB:
-            points = (
-                self.rect.center
-                - ((self.dir * self.rect.h).rotate(90) * 0.2)
-                + (-self.dir * 12),
-                self.rect.center
-                - ((self.dir * self.rect.h).rotate(-90) * 0.2)
-                + (-self.dir * 12),
-            )
-            self.trail.set_start(points)
-            if (
-                data.ticks - self.last_trail >= PLAYER_TRAIL_COOLDOWN
-                and self.speed > 0
-                and data.game.wormhole is None
-            ):
-                self.last_trail = data.ticks
-                self.trail.add(points)
-            if data.ticks - self.damage_time < 1000:
-                self.trail.color = (255, 0, 50)
-            else:
-                self.trail.color = PLAYER_TRAIL_COL
+    def update_trail(self):
+        points = (
+            self.rect.center
+            - ((self.dir * self.rect.h).rotate(90) * 0.2)
+            + (-self.dir * 12),
+            self.rect.center
+            - ((self.dir * self.rect.h).rotate(-90) * 0.2)
+            + (-self.dir * 12),
+        )
+        self.trail.set_start(points)
+        if (
+            data.ticks - self.last_trail >= PLAYER_TRAIL_COOLDOWN
+            and self.speed > 0
+            and data.game.wormhole is None
+        ):
+            self.last_trail = data.ticks
+            self.trail.add(points)
+        if data.ticks - self.damage_time < 1000:
+            self.trail.color = (255, 0, 50)
+        else:
+            self.trail.color = PLAYER_TRAIL_COL
 
     def update_directions(self):
         self.dir = pygame.Vector2(pygame.mouse.get_pos()) - CENTER
@@ -137,14 +142,29 @@ class Player:
         support.norm(self.dir)
         support.norm(self.ret_dir)
 
-        prev_angle = math.degrees(math.atan2(-self.prev_dir.y, self.prev_dir.x)) - 90
         angle = math.degrees(math.atan2(-self.dir.y, self.dir.x)) - 90
-
-        if (prev_angle < 0 and angle > 0 and self.angle < 0) or (
-            prev_angle > 0 and angle < 0 and self.angle > 0
+        if angle >= -270 and angle < -270 + 80 and self.angle <= 90 and self.angle > 10:
+            self.angle = -270 - (90 - self.angle)
+        elif (
+            angle <= 90 and angle > 10 and self.angle >= -270 and self.angle < -270 + 80
         ):
-            self.angle = angle
+            self.angle = 90 + (270 + self.angle)
         self.angle = pygame.math.lerp(self.angle, angle, data.dt * PLAYER_ROT_SPEED)
+
+    def update_position(self):
+        if data.game.wormhole is not None:
+            return
+
+        self.speed = pygame.math.clamp(self.speed, 0, PLAYER_SPEED)
+        self.ret_speed = pygame.math.clamp(self.ret_speed, 0, PLAYER_SPEED * 2)
+        self.push_speed = pygame.math.clamp(self.push_speed, 0, PLAYER_SPEED)
+
+        self.rect.topleft += (
+            self.dir * self.speed * data.dt
+            + self.ret_dir * self.ret_speed * data.dt
+            + self.push_dir * self.push_speed * data.dt
+        )
+        self.prev_dir = self.dir.copy()
 
     def resource_collisions(self):
         self.hovering_resources = False
@@ -168,6 +188,7 @@ class Player:
                     data.game.grabbed_one_resource = True
                 else:
                     self.pickup_fail_time = pygame.time.get_ticks()
+            self.hovering_resources = False
         else:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
             for res in self.resources:
@@ -202,20 +223,15 @@ class Player:
                 self.push_dir = pygame.Vector2(self.rect.center) - wb.pos
                 support.norm(self.push_dir)
 
-    def update_position(self):
-        if data.game.wormhole is not None:
-            return
-
-        self.speed = pygame.math.clamp(self.speed, 0, PLAYER_SPEED)
-        self.ret_speed = pygame.math.clamp(self.ret_speed, 0, PLAYER_SPEED * 2)
-        self.push_speed = pygame.math.clamp(self.push_speed, 0, PLAYER_SPEED)
-
-        self.rect.topleft += (
-            self.dir * self.speed * data.dt
-            + self.ret_dir * self.ret_speed * data.dt
-            + self.push_dir * self.push_speed * data.dt
-        )
-        self.prev_dir = self.dir.copy()
+    def draw_early(self):
+        for res in self.resources:
+            pygame.draw.line(
+                data.screen,
+                PLAYER_STRING_COL,
+                CENTER,
+                CENTER + res.rect.center - self.rect.center,
+                2,
+            )
 
     def draw(self):
         data.screen.blit(self.image, self.static_rect)

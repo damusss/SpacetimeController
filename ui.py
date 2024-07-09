@@ -8,6 +8,7 @@ from consts import *
 class UI:
     def __init__(self):
         self.resources_font = data.assets.font(18)
+        self.weapons_font = data.assets.font(17)
         self.info_font = data.assets.font(12)
         self.help_font = data.assets.font(16)
         self.fps_font = data.assets.font(14)
@@ -84,13 +85,13 @@ class UI:
         self.restart_button = button.Button(
             self.btn_font.render("RESTART", True, "white"),
             (WIDTH / 2, HEIGHT / 2 + HEIGHT / 8),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
         )
         self.menu_button = button.Button(
             self.btn_font.render("MENU", True, "white"),
             (WIDTH / 2, HEIGHT / 2 + HEIGHT / 4),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=self.restart_button.text_img.get_size(),
         )
@@ -113,9 +114,9 @@ class UI:
         )
 
     def update(self):
-        if data.game.finished:
+        if data.game.finished and data.ticks - data.game.finish_time >= 2200:
             if self.restart_button.update():
-                support.restart()
+                data.game.restart()
             if self.menu_button.update():
                 data.app.enter_menu()
             return
@@ -151,7 +152,7 @@ class UI:
             self.draw_gameover()
         else:
             self.draw_win()
-        if data.ticks - data.game.finish_time >= 2500:
+        if data.ticks - data.game.finish_time >= 2200:
             self.restart_button.draw()
             self.menu_button.draw()
 
@@ -246,7 +247,7 @@ class UI:
                 if resource not in data.game.starter_inventory
                 else "FREE"
             )
-            amount_img = self.resources_font.render(text, True, color)
+            amount_img = self.weapons_font.render(text, True, color)
             weapon_rect = weapon_img.get_rect(topleft=(0, y))
             number_rect = number_img.get_rect(midleft=(UI_S, weapon_rect.centery))
             data.screen.blit(number_img, number_rect)

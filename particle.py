@@ -58,9 +58,18 @@ class Trail:
 
 class GrowParticle(chunks.Sprite):
     def __init__(
-        self, pos, start_size, end_size, time, image, groups=None, finish_func=None
+        self,
+        pos,
+        start_size,
+        end_size,
+        time,
+        image,
+        groups=None,
+        finish_func=None,
+        follow_player=False,
     ):
         self.finish_func = finish_func
+        self.follow_player = follow_player
         if groups is None:
             groups = []
         self.start_size = start_size
@@ -83,6 +92,8 @@ class GrowParticle(chunks.Sprite):
             )
         self.image = pygame.transform.scale(self.original_image, (self.size, self.size))
         self.rect = self.image.get_rect(center=self.rect.center)
+        if self.follow_player:
+            self.rect.center = data.player.rect.center
         if (self.start_size < self.end_size and self.size >= self.end_size) or (
             self.start_size > self.end_size and self.size <= self.end_size
         ):
@@ -112,7 +123,7 @@ class MoveParticle(chunks.Sprite):
 class Explosion(GrowParticle):
     def __init__(self, pos, size=EXPLOSION_SIZE, color=None, startsize=None):
         if color is None:
-            color = EXPLOSION_COLORS[0]
+            color = EXPLOSION_COLS[0]
         if startsize is None:
             startsize = 1
         self.color = color
@@ -138,7 +149,7 @@ class Explosion(GrowParticle):
             Explosion(
                 self.rect.center,
                 self.end_size,
-                EXPLOSION_COLORS[EXPLOSION_COLORS.index(self.color) + 1],
+                EXPLOSION_COLS[EXPLOSION_COLS.index(self.color) + 1],
             )
             self.spawned_section = True
 
@@ -168,6 +179,6 @@ class SupernovaExplosion(GrowParticle):
         ):
             SupernovaExplosion(
                 self.rect.center,
-                SUPERNOVA_COLORS[SUPERNOVA_COLORS.index(self.color) + 1],
+                SUPERNOVA_COLS[SUPERNOVA_COLS.index(self.color) + 1],
             )
             self.spawned_section = True

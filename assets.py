@@ -31,7 +31,7 @@ class Assets:
         sound = self.load_sound
         self.sounds = {
             **sound("asteroid_hit", 0.4),  # FINAL
-            **sound("power_unlock", 1),  # FINAL
+            **sound("power_unlock", 0.7),  # FINAL
             **sound("big_explosion", 1),  # FINAL
             **sound("grab", 0.32),  # FINAL ##
             **sound("button_click", 0.8),  # FINAL #
@@ -147,9 +147,56 @@ class Assets:
         wh.blit(self.get_dust(whsize, (0, 255, 0, 150), False), (0, 0))
         return wh
 
+    def get_shield(self):
+        w = WEAPONS["shield"][WEAPON_SIZEID]
+        cw = w / SHIELD_MULT
+        surf = pygame.Surface((w, w), pygame.SRCALPHA)
+        mask_surf = pygame.Surface((w, w), pygame.SRCALPHA)
+        pygame.draw.circle(mask_surf, "white", (w / 2, w / 2), cw / 2)
+        segment = int(cw / 24)
+        on = True
+        color = RESOURCES["quartz"][RESOURCE_COLID]
+        x = w / 2 - cw / 2
+        while x < w / 2 + cw / 2:
+            if on:
+                pygame.draw.line(
+                    surf,
+                    color,
+                    (x, w / 2 - cw / 2),
+                    (x, w / 2 + cw / 2),
+                    segment,
+                )
+                x += segment
+            else:
+                x += segment * 2
+            on = not on
+        y = w / 2 - cw / 2
+        on = True
+        while y < w / 2 + cw / 2:
+            if on:
+                pygame.draw.line(
+                    surf,
+                    color,
+                    (w / 2 - cw / 2, y),
+                    (w / 2 + cw / 2, y),
+                    segment,
+                )
+                y += segment
+            else:
+                y += segment * 2
+            on = not on
+        surf.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        pygame.draw.circle(surf, color, (w / 2, w / 2), cw / 2, int(segment / 1.5))
+        surf.blit(self.get_dust(w, color, False), (0, 0))
+        return surf
+
     def make_weapons(self):
         self.wh_particle = self.get_dust(WHITEHOLE_PARTICLE_SIZE, (0, 100, 200, 150))
         self.weapons = {
+            "red_hole": self.get_blackhole(
+                WEAPONS["red_hole"][WEAPON_SIZEID] / 2, (255, 0, 0), mult=1.8
+            ),
+            "shield": self.get_shield(),
             "purple_hole": self.get_blackhole(
                 WEAPONS["purple_hole"][WEAPON_SIZEID] / 2, (120, 0, 255), mult=2
             ),

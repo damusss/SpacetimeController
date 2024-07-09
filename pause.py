@@ -24,28 +24,28 @@ class Pause:
         self.resume_btn = button.Button(
             self.resume_txt,
             (WIDTH / 2, self.title_rect.bottom + HEIGHT / 7),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=self.restart_txt.get_size(),
         )
         self.menu_btn = button.Button(
             self.menu_txt,
             (WIDTH / 2, self.title_rect.bottom + HEIGHT / 4),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=self.restart_txt.get_size(),
         )
         self.restart_btn = button.Button(
             self.restart_txt,
             (WIDTH / 2, self.title_rect.bottom + HEIGHT / 2.79),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=self.restart_txt.get_size(),
         )
         self.quit_btn = button.Button(
             self.quit_txt,
             (WIDTH / 2, self.title_rect.bottom + HEIGHT / 1.7),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=self.restart_txt.get_size(),
         )
@@ -59,7 +59,7 @@ class Pause:
         self.left_plus = button.Button(
             plus,
             (self.leftx, self.y - UI_PAUSE_INCREASE),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=fixedsize,
             animate=False,
@@ -67,7 +67,7 @@ class Pause:
         self.left_minus = button.Button(
             minus,
             (self.leftx, self.y + UI_PAUSE_INCREASE),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=fixedsize,
             animate=False,
@@ -75,7 +75,7 @@ class Pause:
         self.right_plus = button.Button(
             plus,
             (self.rightx, self.y - UI_PAUSE_INCREASE),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=fixedsize,
             animate=False,
@@ -83,7 +83,7 @@ class Pause:
         self.right_minus = button.Button(
             minus,
             (self.rightx, self.y + UI_PAUSE_INCREASE),
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             fixed_size=fixedsize,
             animate=False,
@@ -118,16 +118,16 @@ class Pause:
         if self.quit_btn.update():
             support.quit()
         if self.restart_btn.update():
-            support.restart()
+            data.game.restart()
 
         if self.left_plus.update():
-            support.volume_change(data.app.music_vol, 1, "music_vol")
+            data.app.change_volume(1, "music_vol")
         if self.left_minus.update():
-            support.volume_change(data.app.music_vol, -1, "music_vol")
+            data.app.change_volume(-1, "music_vol")
         if self.right_plus.update():
-            support.volume_change(data.app.fx_vol, 1, "fx_vol")
+            data.app.change_volume(1, "fx_vol")
         if self.right_minus.update():
-            support.volume_change(data.app.fx_vol, -1, "fx_vol")
+            data.app.change_volume(-1, "fx_vol")
 
     def draw(self):
         data.screen.blit(self.overlay, (0, 0))

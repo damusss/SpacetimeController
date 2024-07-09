@@ -19,7 +19,7 @@ class AsteroidResource(chunks.Sprite):
         self.speed = support.randrange(FRAGMENT_SPEED_RANGE) / 2
         self.escape_time = 0
         self.can_destroy = True
-        self.follow_offset = support.randvec(10)
+        self.follow_offset = support.randvec(10 + 10 * random.random())
         self.blackhole = None
         self.blackhole_pos = pygame.Vector2()
         self.blackhole_len = 0

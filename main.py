@@ -6,7 +6,8 @@
 # ///
 # pygbag .
 
-# TODO: victory sound
+# TODO: victory sound, shield sound
+# TODO: weapons break asteroids
 
 import pygame
 from consts import *
@@ -23,11 +24,13 @@ import os
 class Main:
     def __init__(self):
         print("CONSOLE OPEN BECAUSE WINDOWS THINKS IT'S A VIRUS OTHERWISE")
+        if not WEB:
+            assert hasattr(
+                pygame, "IS_CE"
+            ), "Are you really trying to build the game from source without pygame-ce?"
 
         data.app = self
         data.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption(TITLE)
-        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
         self.clock = pygame.Clock()
         self.start_click = pygame.Vector2()
         self.music_vol = 0.5
@@ -38,12 +41,23 @@ class Main:
         self.scene = 0
         data.main_menu = main_menu.MainMenu()
         data.game = game.Game()
-
         self.scenes: list[main_menu.MainMenu] = [data.main_menu, data.game]
         self.scenes[self.scene].enter()
 
         pygame.display.set_icon(data.assets.get_player())
+        pygame.display.set_caption(TITLE)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
         data.assets.music_play("game_music")
+        data.assets.update_volumes()
+
+    def change_volume(self, dir, name):
+        volume = getattr(self, name)
+        val = pygame.math.clamp(volume + (dir * 0.1), 0, 1)
+        if abs(1 - val) < 0.01:
+            val = 1
+        if abs(0 - val) < 0.01:
+            val = 0
+        setattr(self, name, val)
         data.assets.update_volumes()
 
     def load_volumes(self):

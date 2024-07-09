@@ -4,6 +4,7 @@ import support
 import chunks
 import particle
 import random
+import functools
 from consts import *
 
 
@@ -38,6 +39,21 @@ class PurpleHole(Weapon):
 
     def collidecenter(self, pos):
         return self.pos.distance_to(pos) <= self.size / 4
+
+    def on_finish(self):
+        data.assets.play("suck")
+        particle.GrowParticle(
+            self.rect.center, self.rect.w, 2, WEAPON_DISAPPEAR_SPEED, self.image
+        )
+
+
+class RedHoleClone(Weapon):
+    def __init__(self, pos):
+        super().__init__(pos, "red_hole")
+        self.duration += random.randint(500, 1200)
+
+    def collidecenter(self, pos):
+        return self.pos.distance_to(pos) <= self.radius
 
     def on_finish(self):
         data.assets.play("suck")
@@ -99,7 +115,7 @@ class Supernova(Weapon):
 
     def on_finish(self):
         data.assets.play("big_explosion")
-        particle.SupernovaExplosion(self.pos, SUPERNOVA_COLORS[0])
+        particle.SupernovaExplosion(self.pos, SUPERNOVA_COLS[0])
 
 
 class WormHole(Weapon):
@@ -116,6 +132,8 @@ class WormHole(Weapon):
         data.assets.play("teleport")
         data.game.wormhole = None
         data.player.rect.center = self.teleport_pos
+        for res in data.player.resources:
+            res.rect.center = self.teleport_pos
         particle.GrowParticle(
             self.teleport_pos,
             1,
@@ -133,9 +151,50 @@ class WormHole(Weapon):
         self.rect = self.image.get_rect(center=self.rect.center)
 
 
+def RedHole():
+    for enemy in data.game.pack.enemies:
+        pos = enemy.rect.center
+        particle.GrowParticle(
+            pos,
+            2,
+            WEAPONS["red_hole"][WEAPON_SIZEID],
+            random.randint(150, 250),
+            data.assets.get_weapon("red_hole"),
+            finish_func=functools.partial(RedHoleClone, pos),
+        )
+
+
+class Shield(Weapon):
+    def __init__(self, *_):
+        super().__init__(data.player.rect.center, "shield")
+        self.static_image = self.image
+        self.angle = 0
+        data.game.shield = self
+
+    def collidecenter(self, pos):
+        return self.pos.distance_to(pos) <= self.radius
+
+    def on_finish(self):
+        data.game.shield = None
+        data.assets.play("suck")
+        particle.GrowParticle(
+            self.rect.center, self.rect.w, 2, WEAPON_DISAPPEAR_SPEED, self.image
+        )
+
+    def update(self):
+        self.check_finish()
+        self.angle += data.dt * SHIELD_ROT_SPEED
+        self.image = pygame.transform.rotate(self.static_image, self.angle)
+        self.rect = self.image.get_rect()
+        self.rect.center = data.player.rect.center
+        self.pos = pygame.Vector2(self.rect.center)
+
+
 WEAPON_CLASSES = {
+    "red_hole": RedHole,
     "purple_hole": PurpleHole,
     "white_hole": WhiteHole,
     "supernova": Supernova,
     "worm_hole": WormHole,
+    "shield": Shield,
 }

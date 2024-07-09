@@ -38,13 +38,14 @@ class Enemy(chunks.Sprite):
             + (self.push_dir * (self.push_speed) * data.dt) * self.pushing
         )
 
-        prev_angle = math.degrees(math.atan2(-self.prev_dir.y, self.prev_dir.x)) - 90
         angle = math.degrees(math.atan2(-self.dir.y, self.dir.x)) - 90
-        self.angle = pygame.math.lerp(self.angle, angle, data.dt * ENEMY_ROT_SPEED)
-        if (prev_angle < 0 and angle > 0 and self.angle < 0) or (
-            prev_angle > 0 and angle < 0 and self.angle > 0
+        if angle >= -270 and angle < -270 + 80 and self.angle <= 90 and self.angle > 10:
+            self.angle = -270 - (90 - self.angle)
+        elif (
+            angle <= 90 and angle > 10 and self.angle >= -270 and self.angle < -270 + 80
         ):
-            self.angle = angle
+            self.angle = 90 + (270 + self.angle)
+        self.angle = pygame.math.lerp(self.angle, angle, data.dt * ENEMY_ROT_SPEED)
         self.image = pygame.transform.rotate(self.static_image, self.angle)
         self.hitbox = self.rect.inflate(self.rect.w / 4, self.rect.h / 4)
         self.prev_dir = self.dir.copy()
@@ -83,11 +84,16 @@ class Enemy(chunks.Sprite):
         for ph in data.game.purpleholes:
             if ph.collidesuck(self.rect.center):
                 self.pushing = True
-                self.push_dir = ph.pos - pygame.Vector2(self.rect.center)
+                self.push_dir = ph.pos - self.rect.center
                 self.push_speed = PURPLEHOLE_SUCK_SPEED
                 if not self.sucked:
                     self.sucked = True
                     data.assets.play("suck")
+        if data.game.shield is not None:
+            if data.game.shield.collidecenter(self.rect.center):
+                self.pushing = True
+                self.push_dir = -data.game.shield.pos + self.rect.center
+                self.push_speed = SHIELD_PUSH_SPEED
 
     def get_behind(self, dist=3):
         return self.rect.center - (self.dir * self.rect.h * dist)
@@ -99,8 +105,11 @@ class EnemyPack:
         self.enemies: list[Enemy] | chunks.CameraRenderGroup = (
             chunks.CameraRenderGroup()
         )
+
         self.formation_func = getattr(self, f"formation_{self.enemy_type}")
-        for _ in range(support.randrange(ENEMIES[self.enemy_type][ENEMY_PACKSIZEID])):
+        ps1, ps2 = ENEMIES[self.enemy_type][ENEMY_PACKSIZEID]
+        ps1 = pygame.math.clamp(ps1 + data.game.extra_enemies, ps1, ps2)
+        for _ in range(support.randrange((int(ps1), int(ps2)))):
             Enemy(center, self.enemy_type, self)
 
     def get_boss(self, ppos):

@@ -61,7 +61,7 @@ class MainMenu:
             "easy": button.Button(
                 self.other_font.render("EASY", True, "white"),
                 (WIDTH / 5, HEIGHT / 2 + HEIGHT / 6),
-                BTN_COLOR,
+                BTN_COL,
                 BTN_HOVER,
                 True,
                 fixed_size=normtxt.get_size(),
@@ -69,7 +69,7 @@ class MainMenu:
             "normal": button.Button(
                 normtxt,
                 (WIDTH / 5, HEIGHT / 2 + HEIGHT / 3.5),
-                BTN_COLOR,
+                BTN_COL,
                 BTN_HOVER,
                 True,
                 True,
@@ -77,7 +77,7 @@ class MainMenu:
             "hard": button.Button(
                 self.other_font.render("HARD", True, "white"),
                 (WIDTH / 2 + WIDTH / 3.5, HEIGHT / 4),
-                BTN_COLOR,
+                BTN_COL,
                 BTN_HOVER,
                 True,
                 fixed_size=extremetxt.get_size(),
@@ -85,7 +85,7 @@ class MainMenu:
             "extreme": button.Button(
                 extremetxt,
                 (WIDTH / 2 + WIDTH / 3.5, HEIGHT / 4 + HEIGHT / 8),
-                BTN_COLOR,
+                BTN_COL,
                 BTN_HOVER,
                 True,
             ),
@@ -96,7 +96,7 @@ class MainMenu:
             txt.get_rect(
                 topleft=(UI_S * 25, self.title1.get_height() + UI_S * 5)
             ).center,
-            BTN_COLOR,
+            BTN_COL,
             BTN_HOVER,
             True,
             False,
@@ -231,8 +231,8 @@ class MainMenu:
                     btn.color = MENU_COMPLETED_COL
                     btn.hover_color = MENU_COMPLETED_HOVER
             else:
-                if btn.color != BTN_COLOR:
-                    btn.color = BTN_COLOR
+                if btn.color != BTN_COL:
+                    btn.color = BTN_COL
                     btn.hover_color = BTN_HOVER
             p += 1
         self.mobile_button.draw()
