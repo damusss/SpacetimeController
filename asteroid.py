@@ -144,6 +144,8 @@ class Asteroid(chunks.Sprite):
         self.change_time = data.ticks
         self.is_hit = False
         self.hit_time = data.ticks
+        self.pushing = False
+        self.push_dir = pygame.Vector2()
         super().__init__(None, image, data.game.asteroids, center)
         self.hitbox = pygame.FRect(0, 0, self.rect.w / 1.5, self.rect.h / 1.5)
         [AsteroidResource(self, self.resource) for _ in range(self.amount)]
@@ -182,7 +184,23 @@ class Asteroid(chunks.Sprite):
             self.dir = support.randvec()
             self.change_time = data.ticks
 
+        self.pushing = False
+        for ph in data.game.purpleholes:
+            if ph.collidesuck(self.rect.center):
+                self.pushing = True
+                self.push_dir = ph.pos - self.rect.center
+                support.norm(self.push_dir)
+                if self not in ph.sucked:
+                    ph.sucked.add(self)
+                    data.assets.play("suck")
+
         self.rect.topleft += self.dir * self.speed * data.dt
+        if self.pushing:
+            self.rect.topleft += self.push_dir * PURPLEHOLE_SUCK_SPEED * data.dt
+
         self.hitbox.center = self.rect.center
         for res in self.resources:
             res.rect.center = self.rect.center + res.rel_pos
+        for ad in data.game.asteroid_damages:
+            if ad.collidecenter(self.rect.center):
+                self.destroy()

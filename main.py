@@ -4,13 +4,9 @@
 #   "pygame-ce",
 # ]
 # ///
-# pygbag .
 
-# TODO: victory sound, shield sound
-# TODO: weapons break asteroids
-
-import pygame
 from consts import *
+import pygame
 import data
 import asyncio
 import support

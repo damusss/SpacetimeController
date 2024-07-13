@@ -9,15 +9,13 @@ from consts import *
 
 
 class Weapon(chunks.Sprite):
-    def __init__(self, pos, kind):
+    def __init__(self, pos, kind, groups):
         self.radius = WEAPONS[kind][WEAPON_RADID]
         self.size = WEAPONS[kind][WEAPON_SIZEID]
         self.pos = pygame.Vector2(pos)
         self.duration = WEAPONS[kind][WEAPON_DURATIONID]
         self.born_time = data.ticks
-        super().__init__(
-            None, data.assets.get_weapon(kind), data.game.weapon_groups[kind], pos
-        )
+        super().__init__(None, data.assets.get_weapon(kind), groups, pos)
 
     def check_finish(self):
         if data.ticks - self.born_time >= self.duration:
@@ -32,7 +30,18 @@ class Weapon(chunks.Sprite):
 
 class PurpleHole(Weapon):
     def __init__(self, pos):
-        super().__init__(pos, "purple_hole")
+        super().__init__(
+            pos,
+            "purple_hole",
+            [
+                data.game.purpleholes,
+                data.game.objects,
+                data.game.enemy_damages,
+                data.game.weapon_bodies,
+                data.game.asteroid_damages,
+            ],
+        )
+        self.sucked = set()
 
     def collidesuck(self, pos):
         return self.pos.distance_to(pos) <= self.radius
@@ -49,11 +58,20 @@ class PurpleHole(Weapon):
 
 class RedHoleClone(Weapon):
     def __init__(self, pos):
-        super().__init__(pos, "red_hole")
+        super().__init__(
+            pos,
+            "red_hole",
+            [
+                data.game.objects,
+                data.game.enemy_damages,
+                data.game.weapon_bodies,
+                data.game.asteroid_damages,
+            ],
+        )
         self.duration += random.randint(500, 1200)
 
     def collidecenter(self, pos):
-        return self.pos.distance_to(pos) <= self.radius
+        return self.pos.distance_to(pos) <= self.radius / 2
 
     def on_finish(self):
         data.assets.play("suck")
@@ -65,7 +83,9 @@ class RedHoleClone(Weapon):
 class WhiteHole(Weapon):
     def __init__(self, pos):
         self.last_particle = data.ticks
-        super().__init__(pos, "white_hole")
+        super().__init__(
+            pos, "white_hole", [data.game.objects, data.game.weapon_bodies]
+        )
 
     def collidecenter(self, pos):
         return self.pos.distance_to(pos) <= self.size / 4
@@ -79,7 +99,7 @@ class WhiteHole(Weapon):
             WHITEHOLE_PARTICLE_SPEED,
             self.radius,
             data.assets.get_particle(),
-            [data.game.enemy_damages],
+            [data.game.enemy_damages, data.game.asteroid_damages],
         )
 
     def on_finish(self):
@@ -97,7 +117,7 @@ class WhiteHole(Weapon):
 
 class Supernova(Weapon):
     def __init__(self, pos):
-        super().__init__(pos, "supernova")
+        super().__init__(pos, "supernova", [data.game.objects, data.game.weapon_bodies])
         self.original_image = self.image
         data.assets.play("supernova")
 
@@ -120,7 +140,7 @@ class Supernova(Weapon):
 
 class WormHole(Weapon):
     def __init__(self, pos):
-        super().__init__(pos, "worm_hole")
+        super().__init__(pos, "worm_hole", [data.game.objects])
         data.assets.play("worm_hole")
         data.game.wormhole = self
         self.teleport_pos = pygame.Vector2(support.randpos(UNIVERSE_RECT))
@@ -166,10 +186,11 @@ def RedHole():
 
 class Shield(Weapon):
     def __init__(self, *_):
-        super().__init__(data.player.rect.center, "shield")
+        super().__init__(data.player.rect.center, "shield", [data.game.objects])
         self.static_image = self.image
         self.angle = 0
         data.game.shield = self
+        data.assets.play("shield")
 
     def collidecenter(self, pos):
         return self.pos.distance_to(pos) <= self.radius

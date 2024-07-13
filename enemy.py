@@ -20,7 +20,7 @@ class Enemy(chunks.Sprite):
         self.blue_offset = support.randvec(random.randint(300, 800))
         self.angle = 0
         self.push_speed = self.speed / 10
-        self.sucked = False
+        self.pack = pack
 
         super().__init__(None, data.assets.get_enemy(enemy_type), pack.enemies, pos)
         self.hitbox = self.rect.inflate(self.rect.w / 3, self.rect.h / 3)
@@ -47,7 +47,10 @@ class Enemy(chunks.Sprite):
             self.angle = 90 + (270 + self.angle)
         self.angle = pygame.math.lerp(self.angle, angle, data.dt * ENEMY_ROT_SPEED)
         self.image = pygame.transform.rotate(self.static_image, self.angle)
-        self.hitbox = self.rect.inflate(self.rect.w / 4, self.rect.h / 4)
+        self.hitbox = self.rect.inflate(
+            self.rect.w / 4,
+            self.rect.h / 4 if self.pack.enemy_type != "red" else self.rect.h / 2,
+        )
         self.prev_dir = self.dir.copy()
 
         if self.hitbox.colliderect(data.player.hitbox):
@@ -76,6 +79,16 @@ class Enemy(chunks.Sprite):
                     self.pushing = True
                     self.push_dir = pygame.Vector2(self.rect.center) - bh.pos
 
+        if self.pack.enemy_type == "red":
+            for enemy in self.pack.enemies:
+                if enemy is not self:
+                    if enemy.rect.colliderect(self.rect):
+                        self.pushing = True
+                        self.push_dir = (
+                            pygame.Vector2(self.rect.center) - enemy.rect.center
+                        )
+                        self.push_speed = self.speed / 1.2
+
     def weapon_collisions(self):
         for wb in data.game.enemy_damages:
             if wb.collidecenter(self.rect.center):
@@ -86,8 +99,8 @@ class Enemy(chunks.Sprite):
                 self.pushing = True
                 self.push_dir = ph.pos - self.rect.center
                 self.push_speed = PURPLEHOLE_SUCK_SPEED
-                if not self.sucked:
-                    self.sucked = True
+                if self not in ph.sucked:
+                    ph.sucked.add(self)
                     data.assets.play("suck")
         if data.game.shield is not None:
             if data.game.shield.collidecenter(self.rect.center):
@@ -105,7 +118,6 @@ class EnemyPack:
         self.enemies: list[Enemy] | chunks.CameraRenderGroup = (
             chunks.CameraRenderGroup()
         )
-
         self.formation_func = getattr(self, f"formation_{self.enemy_type}")
         ps1, ps2 = ENEMIES[self.enemy_type][ENEMY_PACKSIZEID]
         ps1 = pygame.math.clamp(ps1 + data.game.extra_enemies, ps1, ps2)
@@ -169,6 +181,12 @@ class EnemyPack:
             if enemy is boss:
                 continue
             enemy.target_pos = enemy.blue_offset + boss.rect.center
+
+    def formation_red(self, boss: Enemy):
+        for enemy in self.enemies:
+            if enemy is boss:
+                continue
+            enemy.target_pos = boss.target_pos
 
     def draw(self):
         self.enemies.draw()

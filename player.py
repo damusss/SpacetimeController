@@ -88,7 +88,7 @@ class Player:
             or mouse[pygame.BUTTON_LEFT - 1]
         ):
             self.speed += PLAYER_ACC * data.dt
-            self.speed -= dir_angle * 1.5
+            self.speed -= min(abs(dir_angle), 100) * 1.25
         else:
             if self.speed > 0:
                 self.speed -= PLAYER_FRICTION * data.dt

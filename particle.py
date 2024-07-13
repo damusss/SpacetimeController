@@ -164,7 +164,7 @@ class SupernovaExplosion(GrowParticle):
             WEAPONS["supernova"][WEAPON_RADID] * 2,
             SUPERNOVA_EXPLOSION_TIME,
             data.assets.get_explosion(color, 0),
-            [data.game.enemy_damages],
+            [data.game.enemy_damages, data.game.asteroid_damages],
         )
 
     def collidecenter(self, pos):

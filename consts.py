@@ -2,17 +2,15 @@ import pygame
 import sys
 
 pygame.init()
-
 WIDTH, HEIGHT = pygame.display.get_desktop_sizes()[0]
 CENTER = pygame.Vector2(WIDTH // 2, HEIGHT // 2)
 WINDOW_RECT = pygame.Rect(0, 0, WIDTH, HEIGHT)
 FPS = 120
 TITLE = "Spacetime Controller"
+MY_WIDTH = 1536
 WEB = False
 if sys.platform in ("emscripten", "wasi"):
     WEB = True
-
-MY_WIDTH = 1536
 
 
 def SCALE_RES(value):
@@ -111,6 +109,7 @@ ENEMIES = {
     "pink": ["magenta", 8, (8, 12), 260, (SCALE_RES(60), SCALE_RES(40))],
     "yellow": ["yellow", 12, (6, 10), 290, (SCALE_RES(110), SCALE_RES(30))],
     "blue": ["blue", 15, (4, 8), 300, (SCALE_RES(90), SCALE_RES(50))],
+    "red": ["red", 12, (6, 10), 295, (SCALE_RES(22), SCALE_RES(130))],
 }
 ENEMY_COLID = 0
 ENEMY_DAMAGEID = 1

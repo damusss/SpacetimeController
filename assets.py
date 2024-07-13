@@ -30,21 +30,23 @@ class Assets:
     def load_sounds(self):
         sound = self.load_sound
         self.sounds = {
-            **sound("asteroid_hit", 0.4),  # FINAL
-            **sound("power_unlock", 0.7),  # FINAL
-            **sound("big_explosion", 1),  # FINAL
-            **sound("grab", 0.32),  # FINAL ##
-            **sound("button_click", 0.8),  # FINAL #
-            **sound("button_hover", 0.8),  # FINAL ##
-            **sound("collect", 0.2),  # FINAL
-            **sound("player_damage", 1),  # FINAL
-            **sound("small_explosion", 1.2),  # FINAL
-            **sound("suck", 0.8),  # FINAL
-            **sound("wh_attack", 1),  # FINAL
-            **sound("gameover", 1),  # FINAL
-            **sound("supernova", 0.5),  # FINAL
-            **sound("teleport", 0.8),  # FINAL #
-            **sound("worm_hole", 0.5),  # FINAL
+            **sound("asteroid_hit", 0.4),
+            **sound("power_unlock", 0.7),
+            **sound("big_explosion", 1),
+            **sound("grab", 0.32),  ##
+            **sound("button_click", 0.8),  #
+            **sound("button_hover", 0.8),  ##
+            **sound("collect", 0.2),
+            **sound("player_damage", 1),
+            **sound("small_explosion", 1.2),
+            **sound("suck", 0.8),
+            **sound("wh_attack", 1),
+            **sound("gameover", 1),
+            **sound("supernova", 0.5),
+            **sound("teleport", 0.8),  #
+            **sound("worm_hole", 0.5),
+            **sound("shield", 0.3),
+            **sound("victory", 1.2),
         }
 
     def play(self, name):
@@ -278,7 +280,7 @@ class Assets:
         return img
 
     def get_dust(self, size, color, cache=True):
-        if (size, color) in self.dust_cache and cache:
+        if cache and (size, color) in self.dust_cache:
             return self.dust_cache[(size, color)]
 
         result = pygame.transform.scale(self.dust_surf, (size, size))
@@ -330,6 +332,13 @@ class Assets:
         return self.enemies[type]
 
     def make_enemy_green(self, w, h):
+        return [
+            (0, h),
+            (w / 2, 0),
+            (w, h),
+        ]
+
+    def make_enemy_red(self, w, h):
         return [
             (0, h),
             (w / 2, 0),

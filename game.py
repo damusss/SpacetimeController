@@ -47,8 +47,8 @@ class Game:
         data.player = player.Player()
         self.ui = ui.UI()
         self.pause = pause.Pause()
-
         self.chunk_manager = chunks.ChunkManager()
+
         self.asteroids = chunks.CameraRenderGroup()
         self.resources = chunks.CameraRenderGroup()
         self.objects = chunks.CameraRenderGroup()
@@ -56,27 +56,10 @@ class Game:
 
         self.purpleholes = pygame.sprite.Group()
         self.enemy_damages = pygame.sprite.Group()
+        self.asteroid_damages = pygame.sprite.Group()
         self.weapon_bodies = pygame.sprite.Group()
         self.wormhole = None
         self.shield = None
-
-        self.weapon_groups = {
-            "red_hole": [
-                self.objects,
-                self.enemy_damages,
-                self.weapon_bodies,
-            ],
-            "shield": [self.objects],
-            "purple_hole": [
-                self.purpleholes,
-                self.objects,
-                self.enemy_damages,
-                self.weapon_bodies,
-            ],
-            "white_hole": [self.objects, self.weapon_bodies],
-            "supernova": [self.objects, self.weapon_bodies],
-            "worm_hole": self.objects,
-        }
 
         for _ in range(ASTEROID_AMOUNT):
             pos = support.randpos(UNIVERSE_RECT)
@@ -118,13 +101,18 @@ class Game:
         self.extra_enemies += 1
 
     def gameover(self):
+        if self.finished:
+            return
         self.explosion(data.player.rect.center, EXPLOSION_SIZE * 3)
         self.finish_reason = "gameover"
-        self.finish()
         data.assets.play("gameover")
+        self.finish()
 
     def win(self):
+        if self.finished:
+            return
         self.finish_reason = "win"
+        data.assets.play("victory")
         self.finish()
         self.save_data()
 
@@ -247,7 +235,8 @@ class Game:
         self.chunk_manager.draw()
         self.blackholes.draw()
         self.asteroids.draw()
-        data.player.draw_early()
+        if not self.finished:
+            data.player.draw_early()
         self.resources.draw()
         self.objects.draw()
         if self.finished:
